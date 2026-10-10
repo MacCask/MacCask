@@ -63,11 +63,16 @@ final class AppState {
     }
 
     /// 侧边栏徽标数字（0 表示不显示）
+    /// - 应用程序：第三方应用数量（与概览页一致，不含系统应用）
+    /// - Homebrew：可更新数量
+    /// - 启动项：已开启数量
+    /// - 残留文件：未忽略的残留数量
     func badge(for section: SidebarSection) -> Int {
         switch section {
-        case .overview, .apps: return 0
+        case .overview: return 0
+        case .apps: return overview.thirdPartyApps.count
         case .homebrew: return homebrew.outdatedCount
-        case .launchItems: return 0
+        case .launchItems: return launchItems.enabledCount
         case .leftovers: return leftovers.activeCount
         }
     }

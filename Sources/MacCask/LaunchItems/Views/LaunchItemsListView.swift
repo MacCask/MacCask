@@ -117,7 +117,7 @@ struct LaunchItemIcon: View {
 
     var body: some View {
         if let appPath = item.appPath, FileManager.default.fileExists(atPath: appPath) {
-            Image(nsImage: BundleInfoReader.icon(for: appPath))
+            Image(nsImage: BundleInfoReader.icon(for: appPath, size: size))
                 .resizable()
                 .frame(width: size, height: size)
         } else {

@@ -36,6 +36,8 @@ struct OverviewView: View {
 /// 概览仪表盘内容：磁盘卡片、状态磁贴、图表与建议
 struct OverviewDashboard: View {
     @Environment(AppState.self) private var state
+    /// 宽度是否足够两张卡片并排（只在跨过阈值时变化，避免频繁重新布局）
+    @State private var isWide = true
 
     var body: some View {
         let model = state.overview
@@ -51,6 +53,7 @@ struct OverviewDashboard: View {
                 InsightsCard(model: model, navigate: navigate)
             }
         }
+        .onGeometryChange(for: Bool.self) { $0.size.width >= 820 } action: { isWide = $0 }
     }
 
     /// 四个模块的状态磁贴
@@ -80,13 +83,10 @@ struct OverviewDashboard: View {
         }
     }
 
-    /// 自适应行：宽度足够时并排，否则上下排列
+    /// 自适应行：宽度足够时并排，否则上下排列；用 AnyLayout 切换，保持子视图身份不变
     private func adaptiveRow<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(alignment: .top, spacing: 16) { content() }
-                .frame(minWidth: 760)
-            VStack(spacing: 16) { content() }
-        }
+        let layout = isWide ? AnyLayout(HStackLayout(alignment: .top, spacing: 16)) : AnyLayout(VStackLayout(spacing: 16))
+        return layout { content() }
     }
 
     /// 跳转到指定模块

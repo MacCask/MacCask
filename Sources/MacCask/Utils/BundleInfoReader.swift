@@ -41,11 +41,29 @@ enum BundleInfoReader {
         return MDItemCopyAttribute(item, kMDItemLastUsedDate) as? Date
     }
 
-    /// 读取应用图标（带缓存）
-    @MainActor static func icon(for path: String) -> NSImage {
-        if let cached = iconCache[path] { return cached }
-        let image = NSWorkspace.shared.icon(forFile: path)
-        iconCache[path] = image
+    /// 读取应用图标：按显示尺寸预先缩放成位图并缓存
+    /// 系统图标包含 1024px 等多种尺寸，直接缩放显示会在每次重绘时重新采样，列表滚动和悬停动画会卡顿
+    @MainActor static func icon(for path: String, size: CGFloat = 32) -> NSImage {
+        let key = "\(path)#\(Int(size))"
+        if let cached = iconCache[key] { return cached }
+        let source = NSWorkspace.shared.icon(forFile: path)
+        let scale = NSScreen.main?.backingScaleFactor ?? 2
+        let pixels = Int(size * scale)
+        let image = NSImage(size: NSSize(width: size, height: size))
+        if let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: pixels, pixelsHigh: pixels, bitsPerSample: 8,
+                                      samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB,
+                                      bytesPerRow: 0, bitsPerPixel: 0) {
+            rep.size = image.size
+            NSGraphicsContext.saveGraphicsState()
+            NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
+            NSGraphicsContext.current?.imageInterpolation = .high
+            source.draw(in: NSRect(origin: .zero, size: image.size))
+            NSGraphicsContext.restoreGraphicsState()
+            image.addRepresentation(rep)
+        } else {
+            image.addRepresentation(source.bestRepresentation(for: NSRect(x: 0, y: 0, width: size, height: size), context: nil, hints: nil) ?? NSImageRep())
+        }
+        iconCache[key] = image
         return image
     }
 

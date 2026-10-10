@@ -1,10 +1,9 @@
 import SwiftUI
 
-/// 占用最多的应用：横向条形列表（图标 + 名称 | 条形 | 大小与磁盘占比），悬停高亮，点击跳转到应用详情
+/// 占用最多的应用：横向条形列表（图标 + 名称 | 条形 | 大小与磁盘占比），点击跳转到应用详情
 struct TopAppsChart: View {
     let model: OverviewViewModel
     let openApp: (InstalledApp) -> Void
-    @State private var hoveredID: String?
 
     var body: some View {
         let items = model.topApps()
@@ -16,51 +15,59 @@ struct TopAppsChart: View {
                 let maxBytes = Double(items.first?.bytes ?? 1)
                 VStack(spacing: 4) {
                     ForEach(items, id: \.app.id) { item in
-                        row(item, ratio: Double(item.bytes) / maxBytes)
+                        TopAppRow(app: item.app, bytes: item.bytes,
+                                  ratio: Double(item.bytes) / maxBytes,
+                                  diskPercent: model.disk.map { model.percent($0.fraction(of: item.bytes)) } ?? "") {
+                            openApp(item.app)
+                        }
                     }
                 }
             }
         }
     }
+}
 
-    /// 单行
-    private func row(_ item: (app: InstalledApp, bytes: Int64), ratio: Double) -> some View {
-        let dimmed = hoveredID != nil && hoveredID != item.app.id
-        return Button { openApp(item.app) } label: {
+/// 单行：悬停状态由行自己持有，鼠标移动时只重绘当前行，不影响整张卡片
+private struct TopAppRow: View {
+    let app: InstalledApp
+    let bytes: Int64
+    let ratio: Double
+    let diskPercent: String
+    let action: () -> Void
+    @State private var isHovering = false
+
+    var body: some View {
+        Button(action: action) {
             HStack(spacing: 10) {
-                Image(nsImage: BundleInfoReader.icon(for: item.app.id))
-                    .resizable()
+                Image(nsImage: BundleInfoReader.icon(for: app.id, size: 20))
                     .frame(width: 20, height: 20)
-                Text(item.app.name)
+                Text(app.name)
                     .font(.callout)
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .frame(width: 120, alignment: .leading)
-                GeometryReader { geo in
-                    RoundedRectangle(cornerRadius: 4, style: .continuous)
-                        .fill(ChartPalette.blue)
-                        .frame(width: max(geo.size.width * ratio, 4), height: 14)
-                        .frame(maxHeight: .infinity)
-                }
-                .frame(height: 20)
-                Text(ByteFormatter.string(item.bytes))
+                // 条形用 scaleEffect 按比例缩放，不需要 GeometryReader
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .fill(ChartPalette.blue)
+                    .frame(height: 14)
+                    .scaleEffect(x: max(ratio, 0.01), anchor: .leading)
+                    .frame(maxWidth: .infinity)
+                Text(ByteFormatter.string(bytes))
                     .font(.callout.monospacedDigit())
                     .frame(width: 72, alignment: .trailing)
-                Text(model.disk.map { model.percent($0.fraction(of: item.bytes)) } ?? "")
+                Text(diskPercent)
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
                     .frame(width: 44, alignment: .trailing)
             }
             .padding(.horizontal, 6)
             .padding(.vertical, 4)
-            .background(hoveredID == item.app.id ? Color.primary.opacity(0.05) : .clear,
+            .background(isHovering ? Color.primary.opacity(0.06) : .clear,
                         in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-            .opacity(dimmed ? 0.45 : 1)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .onHover { hoveredID = $0 ? item.app.id : nil }
-        .animation(.easeOut(duration: 0.12), value: hoveredID)
-        .help("查看「\(item.app.name)」的详情")
+        .onHover { isHovering = $0 }
+        .help("查看「\(app.name)」的详情")
     }
 }

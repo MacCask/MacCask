@@ -78,7 +78,7 @@ struct AppRowView: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Image(nsImage: BundleInfoReader.icon(for: app.id))
+            Image(nsImage: BundleInfoReader.icon(for: app.id, size: 32))
                 .resizable()
                 .frame(width: 32, height: 32)
             VStack(alignment: .leading, spacing: 3) {

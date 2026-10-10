@@ -151,7 +151,7 @@ struct BrewPackageIcon: View {
 
     var body: some View {
         if let appPath = appPath {
-            Image(nsImage: BundleInfoReader.icon(for: appPath))
+            Image(nsImage: BundleInfoReader.icon(for: appPath, size: size))
                 .resizable()
                 .frame(width: size, height: size)
         } else {

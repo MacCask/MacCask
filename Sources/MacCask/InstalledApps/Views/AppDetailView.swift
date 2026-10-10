@@ -61,7 +61,7 @@ private struct AppDetailContent: View {
     /// 顶部标题区
     private var header: some View {
         HStack(alignment: .top, spacing: 16) {
-            Image(nsImage: BundleInfoReader.icon(for: app.id))
+            Image(nsImage: BundleInfoReader.icon(for: app.id, size: 72))
                 .resizable()
                 .frame(width: 72, height: 72)
             VStack(alignment: .leading, spacing: 6) {

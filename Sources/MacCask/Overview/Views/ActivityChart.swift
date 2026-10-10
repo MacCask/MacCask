@@ -9,7 +9,7 @@ struct ActivityChart: View {
     var body: some View {
         let buckets = model.activityBuckets
         DashboardCard(title: "使用活跃度", subtitle: "第三方应用按上次使用时间分组") {
-            if let stale = model.staleBucket, model.appSizesReady {
+            if let stale = buckets.first(where: { $0.isStale && $0.count > 0 }), model.appSizesReady {
                 VStack(alignment: .trailing, spacing: 0) {
                     Text(ByteFormatter.string(stale.bytes))
                         .font(.title3.weight(.semibold).monospacedDigit())
@@ -46,7 +46,12 @@ struct ActivityChart: View {
                     }
             }
         }
-        .chartXSelection(value: $selectedTitle)
+        // 自定义绑定：只有悬停的分组真正变化时才更新状态，减少重绘
+        .chartXSelection(value: Binding<String?>(
+            get: { selectedTitle },
+            set: { if $0 != selectedTitle { selectedTitle = $0 } }
+        ))
+        .animation(.easeOut(duration: 0.15), value: selectedTitle)
         .chartYAxis {
             AxisMarks(position: .leading) { _ in
                 AxisGridLine().foregroundStyle(Color.primary.opacity(0.06))

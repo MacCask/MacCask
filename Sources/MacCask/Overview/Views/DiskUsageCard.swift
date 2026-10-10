@@ -14,9 +14,11 @@ struct DiskUsageCard: View {
             }
         } content: {
             if let disk = model.disk {
+                // 分段数据每次刷新只计算一次，供分段条与图例共用
+                let segments = model.diskSegments
                 VStack(alignment: .leading, spacing: 18) {
-                    usageBar(disk)
-                    legend(disk)
+                    usageBar(disk, segments: segments)
+                    legend(disk, segments: segments)
                 }
             } else {
                 Text("无法读取磁盘信息").foregroundStyle(.secondary)
@@ -43,9 +45,9 @@ struct DiskUsageCard: View {
     }
 
     /// 分段条：各分段按占总容量比例排列，末尾为可用空间轨道；分段间留 2pt 间隙
-    private func usageBar(_ disk: DiskUsage) -> some View {
+    private func usageBar(_ disk: DiskUsage, segments allSegments: [DiskSegment]) -> some View {
         GeometryReader { geo in
-            let segments = model.diskSegments.filter { ($0.bytes ?? 0) > 0 }
+            let segments = allSegments.filter { ($0.bytes ?? 0) > 0 }
             let gap: CGFloat = 2
             let usable = geo.size.width - gap * CGFloat(segments.count)
             HStack(spacing: gap) {
@@ -71,10 +73,10 @@ struct DiskUsageCard: View {
     }
 
     /// 图例：两列网格，显示大小与占磁盘比例，可点击跳转
-    private func legend(_ disk: DiskUsage) -> some View {
+    private func legend(_ disk: DiskUsage, segments: [DiskSegment]) -> some View {
         let columns = [GridItem(.flexible(), spacing: 28), GridItem(.flexible(), spacing: 28)]
         return LazyVGrid(columns: columns, alignment: .leading, spacing: 10) {
-            ForEach(model.diskSegments) { segment in
+            ForEach(segments) { segment in
                 legendRow(segment, disk: disk)
             }
             LegendItem(color: ChartPalette.track, title: "可用", value: ByteFormatter.string(disk.availableBytes),
