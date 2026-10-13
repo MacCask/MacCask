@@ -131,8 +131,9 @@ macOS 没有「禁用登录项」的公开接口，关闭即从登录项中移�
   - `系统`：位于 `/System/` 下，或 Bundle ID 为 `com.apple.*` 且非 App Store 安装 —— 系统应用禁止卸载；
   - `App Store`：包内存在 `Contents/_MASReceipt`；
   - `Homebrew`：与 Homebrew Cask 的 `app` artifact 匹配。
-- **大小**：后台并发计算，结果写入 `AppSizeCacheEntity` 缓存。
+- **大小**：应用列表、大小排序和列表合计使用“应用包 + 关联数据”；详情仍分列应用包大小与关联数据。后台最多同时分析四个应用，完成一项即更新列表；尚未完成显示“计算中…”，读取不完整显示容量下限或“无法读取”，合计同样保留完整性状态。包大小缓存仅用于提前展示详情和概览；关联数据每次刷新重新扫描，不能根据应用包修改时间复用。详情重新分析或卸载后同步更新列表占用。概览的磁盘分段仍使用应用包大小，避免与单独统计的用户缓存重复计入。
 - **关联文件分析**：在 `~/Library` 与 `/Library` 的常见目录（Application Support、Caches、Preferences、Containers、Group Containers、Saved Application State、Logs、HTTPStorages、WebKit、Cookies、LaunchAgents、LaunchDaemons、PrivilegedHelperTools）中，按 Bundle ID / 应用名匹配，列出每个路径及其大小。
+- **统计完整性**：关联分析保留根目录枚举、子目录遍历和文件属性读取失败的路径；未创建的 Library 根目录不算错误。部分结果显示“至少 …”，完全未读到数据时显示“无法读取”，详情列出失败路径并提供完全磁盘访问权限设置入口。授权后重启应用，现有刷新操作同步重新分析关联数据。不跟随符号链接，包含隐藏文件和包内文件；不通过厂商级模糊匹配扩大删除范围。
 - **卸载**：勾选需要删除的关联文件，确认后统一移到废纸篓（可恢复）；Homebrew 安装的应用改为调用 `brew uninstall --cask`；应用运行中时阻止卸载并提示。
 - **列表交互**：搜索、分类筛选（全部/第三方/系统/App Store/Homebrew）、排序（名称/大小/上次使用）。
 

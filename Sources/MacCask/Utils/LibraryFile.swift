@@ -11,6 +11,9 @@ struct LibraryFile: Identifiable, Hashable, Sendable {
     /// 占用大小（字节）
     let sizeBytes: Int64
 
+    /// 是否已读取该条目的全部内容。
+    var isSizeComplete: Bool = true
+
     /// 是否位于系统级目录（删除需要管理员权限）
     var isSystemLevel: Bool { !url.path.hasPrefix(LibraryLocations.home.path) }
 

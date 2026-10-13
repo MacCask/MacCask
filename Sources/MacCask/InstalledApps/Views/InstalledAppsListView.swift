@@ -11,7 +11,8 @@ struct InstalledAppsListView: View {
             } else {
                 List(selection: $model.selection) {
                     ForEach(model.visibleApps) { app in
-                        AppRowView(app: app, size: model.sizes[app.id]).tag(app.id)
+                        AppRowView(app: app, size: model.totalSizes[app.id]?.bytes,
+                                   isSizeComplete: model.totalSizes[app.id]?.isComplete ?? false).tag(app.id)
                     }
                 }
                 .overlay {
@@ -21,7 +22,7 @@ struct InstalledAppsListView: View {
                 }
                 .safeAreaInset(edge: .top, spacing: 0) { filterBar }
                 .safeAreaInset(edge: .bottom, spacing: 0) {
-                    ListStatusBar(text: L10n.tr("{0} 个应用 · 共 {1}", "\(model.visibleApps.count)", "\(ByteFormatter.string(model.visibleTotalSize))"))
+                    ListStatusBar(text: L10n.tr("{0} 个应用 · 共 {1}", "\(model.visibleApps.count)", "\(model.visibleTotalSizeText)"))
                 }
             }
         }
@@ -75,6 +76,7 @@ struct InstalledAppsListView: View {
 struct AppRowView: View {
     let app: InstalledApp
     let size: Int64?
+    var isSizeComplete = true
 
     var body: some View {
         HStack(spacing: 10) {
@@ -94,9 +96,10 @@ struct AppRowView: View {
                 }
             }
             Spacer(minLength: 8)
-            Text(ByteFormatter.string(size, placeholder: "—"))
+            Text(size.map { ByteFormatter.measured($0, isComplete: isSizeComplete) } ?? L10n.tr("计算中…"))
                 .font(.callout.monospacedDigit())
                 .foregroundStyle(.secondary)
+                .help(L10n.tr("总占用：应用包和关联数据"))
         }
         .padding(.vertical, 2)
         .contextMenu { FileContextMenu(urls: [app.url]) }

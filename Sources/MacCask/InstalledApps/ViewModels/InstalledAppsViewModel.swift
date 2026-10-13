@@ -13,6 +13,8 @@ final class InstalledAppsViewModel {
     private(set) var hasLoaded = false
     /// 应用包大小（路径 → 字节）
     private(set) var sizes: [String: Int64] = [:]
+    /// 列表总占用：应用包和关联数据；尚未完成扫描的应用没有条目。
+    private(set) var totalSizes: [String: FileSizeMeasurement] = [:]
     /// 搜索关键字
     var searchText = ""
     /// 分类筛选
@@ -26,6 +28,9 @@ final class InstalledAppsViewModel {
 
     /// 选中应用的关联文件
     private(set) var relatedFiles: [LibraryFile] = []
+    /// 未能读取的路径，含扫描根目录和关联文件的子目录。
+    private(set) var unreadableURLs: [URL] = []
+    var isAnalysisComplete: Bool { unreadableURLs.isEmpty }
     /// 是否正在分析关联文件
     private(set) var isAnalyzing = false
     /// 卸载时勾选的文件路径
@@ -56,7 +61,7 @@ final class InstalledAppsViewModel {
         case .name:
             return filtered.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
         case .size:
-            return filtered.sorted { (sizes[$0.id] ?? -1) > (sizes[$1.id] ?? -1) }
+            return filtered.sorted { (totalSizes[$0.id]?.bytes ?? -1) > (totalSizes[$1.id]?.bytes ?? -1) }
         case .lastUsed:
             return filtered.sorted { ($0.lastUsed ?? .distantPast) > ($1.lastUsed ?? .distantPast) }
         }
@@ -69,7 +74,20 @@ final class InstalledAppsViewModel {
 
     /// 当前列表中应用的总大小
     var visibleTotalSize: Int64 {
-        visibleApps.reduce(0) { $0 + (sizes[$1.id] ?? 0) }
+        visibleApps.reduce(0) { $0 + (totalSizes[$1.id]?.bytes ?? 0) }
+    }
+
+    /// 列表合计也保留读取失败和扫描尚未结束的状态。
+    var visibleTotalSizeText: String {
+        let visible = visibleApps
+        guard visible.isEmpty || visible.contains(where: { totalSizes[$0.id] != nil }) else {
+            return L10n.tr("计算中…")
+        }
+        let complete = visible.allSatisfy { totalSizes[$0.id]?.isComplete == true }
+        if !complete && visibleTotalSize == 0 && visible.contains(where: { totalSizes[$0.id] == nil }) {
+            return L10n.tr("计算中…")
+        }
+        return ByteFormatter.measured(visibleTotalSize, isComplete: complete)
     }
 
     /// 关联文件合计（不含应用包本身）
@@ -92,66 +110,76 @@ final class InstalledAppsViewModel {
     func refresh() async {
         guard !isScanning else { return }
         isScanning = true
+        defer { isScanning = false }
+        totalSizes = [:]
         let caskApps = await BrewService.shared.caskAppMap()
         apps = await AppScanner.scan(caskApps: caskApps)
-        isScanning = false
         hasLoaded = true
         if let selection, !apps.contains(where: { $0.id == selection }) {
             self.selection = nil
         }
+        reanalyze()
         await computeSizes()
     }
 
-    /// 计算所有应用大小：优先使用数据库缓存，修改时间变化或无缓存的重新计算
+    /// 先恢复包大小供详情和概览展示，再以四路并发重新统计每个应用的完整占用。
     private func computeSizes() async {
         let cached = cacheRepository.cachedEntries(for: apps.map(\.id))
-        var pending: [InstalledApp] = []
+        sizes = [:]
         for app in apps {
             let modified = FileSizeCalculator.modificationDate(of: app.url)
             if let entry = cached[app.id], let modified, entry.modifiedAt == modified {
                 sizes[app.id] = entry.sizeBytes
-            } else {
-                pending.append(app)
             }
         }
-        // 限制并发数，避免大量磁盘 IO 拖慢系统
+        // 关联数据可独立于应用包变化，每次刷新都重新读取，不能用包修改时间判断有效性。
+        let snapshot = apps
         let batchSize = 4
-        for start in stride(from: 0, to: pending.count, by: batchSize) {
-            let batch = Array(pending[start..<min(start + batchSize, pending.count)])
-            let results = await withTaskGroup(of: (InstalledApp, Int64, Date?).self) { group in
+        for start in stride(from: 0, to: snapshot.count, by: batchSize) {
+            let batch = Array(snapshot[start..<min(start + batchSize, snapshot.count)])
+            await withTaskGroup(of: (InstalledApp, RelatedFilesAnalysis, Date?).self) { group in
                 for app in batch {
                     group.addTask {
-                        (app, FileSizeCalculator.allocatedSize(of: app.url), FileSizeCalculator.modificationDate(of: app.url))
+                        let modified = FileSizeCalculator.modificationDate(of: app.url)
+                        return (app, await RelatedFilesAnalyzer.analyze(app), modified)
                     }
                 }
-                var collected: [(InstalledApp, Int64, Date?)] = []
-                for await item in group { collected.append(item) }
-                return collected
-            }
-            for (app, size, modified) in results {
-                sizes[app.id] = size
-                if let modified {
-                    cacheRepository.upsert(path: app.id, modifiedAt: modified, sizeBytes: size)
+                for await (app, result, modified) in group {
+                    guard apps.contains(where: { $0.id == app.id }) else { continue }
+                    // 详情页若已完成更新，保留它较近的结果，避免后台批次覆盖。
+                    if totalSizes[app.id] == nil { totalSizes[app.id] = result.totalMeasurement }
+                    if let bundle = result.files.first(where: { $0.category == .application }) {
+                        sizes[app.id] = bundle.sizeBytes
+                        if bundle.isSizeComplete, let modified {
+                            cacheRepository.upsert(path: app.id, modifiedAt: modified, sizeBytes: bundle.sizeBytes)
+                        }
+                    }
                 }
             }
         }
-        if !pending.isEmpty { cacheRepository.save() }
+        cacheRepository.save()
     }
 
     /// 分析选中应用的关联文件
     private func analyzeSelection() {
         analyzeTask?.cancel()
         relatedFiles = []
+        unreadableURLs = []
         checkedFiles = []
         isAnalyzing = false
         guard let app = selectedApp else { return }
         isAnalyzing = true
         analyzeTask = Task {
-            let files = await RelatedFilesAnalyzer.analyze(app)
+            let result = await RelatedFilesAnalyzer.analyze(app)
             guard !Task.isCancelled, selection == app.id else { return }
-            relatedFiles = files
+            totalSizes[app.id] = result.totalMeasurement
+            if let bundle = result.files.first(where: { $0.category == .application }) {
+                sizes[app.id] = bundle.sizeBytes
+            }
+            relatedFiles = result.files
+            unreadableURLs = result.unreadableURLs.sorted { $0.path < $1.path }
             // 默认全部勾选
-            checkedFiles = Set(files.map(\.id))
+            checkedFiles = Set(result.files.map(\.id))
             isAnalyzing = false
         }
     }
@@ -185,6 +213,7 @@ final class InstalledAppsViewModel {
             if !FileManager.default.fileExists(atPath: app.url.path) {
                 apps.removeAll { $0.id == app.id }
                 sizes[app.id] = nil
+                totalSizes[app.id] = nil
                 selection = nil
             } else {
                 reanalyze()

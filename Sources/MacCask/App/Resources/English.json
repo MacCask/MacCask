@@ -265,5 +265,12 @@
   "跟随系统": "System Default",
   "语言更改立即生效。": "Language changes take effect immediately.",
   "设置…": "Settings…",
-  "演示数据": "Demo data"
+  "演示数据": "Demo data",
+  "应用包大小": "App Bundle Size",
+  "无法读取": "Unreadable",
+  "至少 {0}": "At least {0}",
+  "大小统计不完整": "Incomplete Size Measurement",
+  "部分目录无法读取，当前大小仅包含已读取的文件。请检查完全磁盘访问权限，授权后重启 MacCask；其他读取问题解决后可点击刷新。": "Some folders could not be read. Sizes include only readable files. Check Full Disk Access and restart MacCask after granting access; refresh after resolving other read errors.",
+  "无法读取的路径": "Unreadable Paths",
+  "总占用：应用包和关联数据": "Total usage: app bundle and related data"
 }

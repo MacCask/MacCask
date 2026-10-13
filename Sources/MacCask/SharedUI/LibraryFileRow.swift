@@ -33,7 +33,7 @@ struct LibraryFileRow: View {
                     .truncationMode(.middle)
             }
             Spacer()
-            Text(ByteFormatter.string(file.sizeBytes))
+            Text(ByteFormatter.measured(file.sizeBytes, isComplete: file.isSizeComplete))
                 .font(.callout.monospacedDigit())
                 .foregroundStyle(.secondary)
         }

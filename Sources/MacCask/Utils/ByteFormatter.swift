@@ -7,6 +7,12 @@ enum ByteFormatter {
         string(bytes, locale: L10n.locale)
     }
 
+    /// 不完整的统计只显示下限，零字节时显示未知而非误报为空。
+    static func measured(_ bytes: Int64, isComplete: Bool) -> String {
+        guard !isComplete else { return string(bytes) }
+        return bytes == 0 ? L10n.tr("无法读取") : L10n.tr("至少 {0}", string(bytes))
+    }
+
     /// 显式区域版本供测试使用，保留原有单参数接口供 map 等高阶函数调用。
     static func string(_ bytes: Int64, locale: Locale) -> String {
         bytes.formatted(.byteCount(style: .file, spellsOutZero: false).locale(locale))
