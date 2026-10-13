@@ -1,0 +1,166 @@
+name: Build and release
+
+on:
+  push:
+    branches:
+      - ci/release-validation
+    tags:
+      - '*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  prepare:
+    name: Validate version and signing configuration
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Validate version and release tag
+        id: version
+        env:
+          RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+        run: |
+          bash Tests/Release/test-version.sh
+          bash Tests/Release/test-signing-selection.sh
+          if [ -n "$RELEASE_TAG" ]; then
+            version="$(bash Scripts/Utils/read-version.sh VERSION "$RELEASE_TAG")"
+          else
+            version="$(bash Scripts/Utils/read-version.sh VERSION)"
+          fi
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+      - name: Check required secrets
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+        run: |
+          : "${BUILD_CERTIFICATE_BASE64:?Configure BUILD_CERTIFICATE_BASE64}"
+          : "${P12_PASSWORD:?Configure P12_PASSWORD}"
+
+  build:
+    name: Build ${{ matrix.arch }}
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: macos-26
+          - arch: arm64
+            runner: macos-26
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    env:
+      # 使用匹配的 macOS 26 / Xcode 26.6，避免图标编译器与宿主图形框架不兼容。
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+      TARGET_ARCH: ${{ matrix.arch }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Verify build host and Xcode
+        run: |
+          # Intel VM 的 Metal 渲染不可靠；统一在 ARM 上编译，产物架构由 SwiftPM 指定。
+          test "$(uname -m)" = arm64
+          test -d "$DEVELOPER_DIR"
+          xcodebuild -version
+          xcrun swift --version
+          xcrun --find actool
+      - name: Run tests
+        # 完整测试含图形渲染，在原生 ARM 作业中运行；Intel 产物独立编译并校验。
+        if: matrix.arch == 'arm64'
+        run: swift test --arch arm64
+      - name: Import self-signed certificate
+        id: signing
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+        run: bash Scripts/Release/import-certificate.sh
+      - name: Build, sign, and archive
+        env:
+          SIGN_IDENTITY: ${{ steps.signing.outputs.identity }}
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: make release ARCH="$TARGET_ARCH" BUILD="$BUILD_NUMBER" SIGN_IDENTITY="$SIGN_IDENTITY"
+      - name: Upload architecture archive
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: maccask-${{ matrix.arch }}
+          path: build/releases/MacCask-${{ needs.prepare.outputs.version }}-macos-${{ matrix.arch }}.zip
+          if-no-files-found: error
+          retention-days: 7
+      - name: Remove signing material
+        if: always()
+        run: |
+          keychain_path="$RUNNER_TEMP/maccask-signing.keychain-db"
+          if [ -f "$keychain_path" ]; then
+            security delete-keychain "$keychain_path"
+          fi
+          rm -f "$RUNNER_TEMP/maccask-signing.p12" "$RUNNER_TEMP/maccask-signing.pem"
+
+  publish:
+    name: Publish both architectures
+    # 手动运行和 CI 验证分支只测试打包，只有 tag 推送会发布 Release。
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    needs: [prepare, build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Download archives
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          pattern: maccask-*
+          merge-multiple: true
+          path: release-assets
+      - name: Create checksums and publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          set -euo pipefail
+          cd release-assets
+          intel="MacCask-$RELEASE_VERSION-macos-x86_64.zip"
+          arm="MacCask-$RELEASE_VERSION-macos-arm64.zip"
+          test -s "$intel"
+          test -s "$arm"
+          sha256sum "$intel" "$arm" > SHA256SUMS
+          sha256sum --check SHA256SUMS
+          notes="$RUNNER_TEMP/maccask-release-notes.md"
+          cat > "$notes" <<EOF
+          ## MacCask $RELEASE_VERSION
+
+          Requires macOS 15 or later. Download the archive matching your Mac:
+
+          - **Intel:** \`$intel\`
+          - **Apple Silicon:** \`$arm\`
+
+          Extract the ZIP and copy MacCask.app to Applications.
+
+          **Signing:** Self-signed; not notarized by Apple. macOS may show a security warning on first launch.
+
+          SHA-256 checksums are included in \`SHA256SUMS\`.
+          EOF
+          # 首次创建为草稿，两份压缩包和校验和上传成功后才公开；重跑可替换同名附件。
+          if ! gh release view "$RELEASE_TAG" > /dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" --verify-tag --draft \
+              --title "MacCask $RELEASE_VERSION" --notes-file "$notes"
+          fi
+          gh release upload "$RELEASE_TAG" "$intel" "$arm" SHA256SUMS --clobber
+          gh release edit "$RELEASE_TAG" --draft=false \
+            --title "MacCask $RELEASE_VERSION" --notes-file "$notes"

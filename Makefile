@@ -1,21 +1,32 @@
 # MacCask 构建与打包
 APP_NAME    := MacCask
-VERSION     ?= 1.0.0
+# VERSION 是唯一版本来源；命令行 VERSION=... 不覆盖版本文件。
+override VERSION := $(shell bash Scripts/Utils/read-version.sh VERSION)
+ifeq ($(strip $(VERSION)),)
+$(error 无法读取合法的 VERSION 文件)
+endif
+ARCH        ?= $(shell uname -m)
+ifneq ($(words $(ARCH)),1)
+$(error ARCH 必须是单一架构：x86_64 或 arm64)
+endif
+ifeq ($(filter $(ARCH),x86_64 arm64),)
+$(error ARCH 只支持 x86_64 或 arm64)
+endif
 BUILD       ?= $(shell date +%Y%m%d%H%M)
 BUILD_DIR   := build
 APP_BUNDLE  := $(BUILD_DIR)/$(APP_NAME).app
-BIN_PATH     = $(shell swift build -c release --show-bin-path)
+BIN_PATH     = $(shell swift build -c release --arch $(ARCH) --show-bin-path)
 ICON_DIR    := $(BUILD_DIR)/icon-composer
 # 自动探测系统中第一个可用的代码签名身份（自签证书），可通过 make SIGN_IDENTITY="xxx" 覆盖
 SIGN_IDENTITY ?= $(shell security find-identity -v -p codesigning | awk -F'"' 'NR==1 && NF>1 {print $$2}')
 
-.PHONY: all build icon app run install clean
+.PHONY: all build icon app release run install clean
 
 all: app
 
 # Release 编译
 build: icon
-	swift build -c release
+	swift build -c release --arch $(ARCH)
 
 # 生成应用图标
 icon:
@@ -39,6 +50,10 @@ app: build
 		codesign --force --deep --sign - $(APP_BUNDLE); \
 	fi
 	@echo "打包完成: $(APP_BUNDLE)"
+
+# 生成当前架构的可分发 ZIP，版本与应用包均来自 VERSION。
+release: app
+	bash Scripts/Release/package-app.sh "$(APP_BUNDLE)" "$(ARCH)" "$(BUILD_DIR)/releases"
 
 # 打包并运行
 run: app

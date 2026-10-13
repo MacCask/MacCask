@@ -96,10 +96,10 @@ make app SIGN_IDENTITY="你的代码签名身份名称"
 make app SIGN_IDENTITY=""
 ```
 
-可以指定应用版本和构建号：
+应用版本读取自 [VERSION](../VERSION)，初始为 `1.0.0`，修改版本时请编辑这个文件。构建号可以单独指定：
 
 ```sh
-make app VERSION=1.0.0 BUILD=1
+make app BUILD=1
 ```
 
 打包流程只执行本地签名，不向 Apple 提交公证。验证生成的应用包：
@@ -130,6 +130,7 @@ swift test
 | `swift test` | 运行自动化测试 |
 | `make build` | 生成图标并编译 Release 程序 |
 | `make app` | 创建并签名 `build/MacCask.app` |
+| `make release ARCH=arm64` | 构建 arm64 应用并归档到 `build/releases/`；Intel 使用 `ARCH=x86_64` |
 | `make run` | 打包并启动应用 |
 | `make install` | 打包并安装到 `/Applications` |
 | `make clean` | 删除生成的 `build/` 和 `.build/` 目录 |
@@ -198,6 +199,8 @@ swift test
 修改代码时请遵守[开发约定](../agents.md)，运行 `swift test` 并验证 `make app`。界面改动应检查英语与简体中文，并在 PR 中说明改动和验证结果。
 
 架构细节见[设计文档](design.md)。
+
+维护者可按[发布配置说明](releasing.zh-CN.md)设置签名 Secrets。推送匹配版本的 tag 后，两个架构都构建成功才会发布 Intel 与 Apple Silicon 的独立压缩包。
 
 ## 许可证
 
