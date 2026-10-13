@@ -6,7 +6,7 @@ A native macOS application manager built with SwiftUI. Inspect installed apps an
 
 ![MacCask overview](docs/screenshots/overview.png)
 
-*Screenshots show the English interface with simulated data and familiar application icons. They do not show a real computer's installed apps or files.*
+*Screenshots use demo data.*
 
 ## Features
 
@@ -26,7 +26,6 @@ A native macOS application manager built with SwiftUI. Inspect installed apps an
 | Swift | Swift 6 toolchain; the package uses Swift 5 language mode |
 | Packaging tools | Full Xcode 26 or later, selected as the active developer directory, for the Icon Composer assets and `actool` |
 | Homebrew | Optional; needed only to manage Homebrew packages |
-| Python 3 | Optional; needed only to regenerate documentation screenshots |
 
 The project uses Swift Package Manager and Apple's frameworks, with no external Swift package dependencies. A normal build targets the architecture of the Mac doing the build; the Makefile does not produce a universal binary.
 
@@ -82,6 +81,8 @@ open /Applications/MacCask.app
 
 ### Code signing
 
+The current MacCask app is signed with a self-signed certificate and is not notarized by Apple. macOS may show a security warning when you open it for the first time.
+
 The Makefile uses the first available code-signing identity in your keychain. If none is found, it uses ad-hoc signing. To select an existing self-signed identity:
 
 ```sh
@@ -127,7 +128,6 @@ swift test
 | `swift build` | Debug executable and resources under `.build/` |
 | `swift run MacCask` | Build and launch the debug executable |
 | `swift test` | Run automated tests |
-| `make icon` | Regenerate app and menu bar icon resources |
 | `make build` | Build icons and the release executable |
 | `make app` | Create and sign `build/MacCask.app` |
 | `make run` | Package and launch the app |
@@ -176,8 +176,6 @@ Quit a running application before uninstalling it. Leftover detection uses ident
 
 ![Leftover review](docs/screenshots/leftovers.png)
 
-These previews reuse the app's SwiftUI dashboard and detail components with a static navigation layout for export. Installation state, versions, paths, disk usage, and startup items are simulated.
-
 ## Troubleshooting
 
 | Problem | What to check |
@@ -193,61 +191,13 @@ These previews reuse the app's SwiftUI dashboard and detail components with a st
 
 For a bug report, include your macOS and Xcode versions, how you launched MacCask, reproduction steps, and relevant error output. Remove personal paths and other private information from shared logs or screenshots.
 
-## Project structure
-
-```text
-MacCask/
-├── Package.swift                # Swift Package Manager configuration
-├── Makefile                     # Build, packaging, installation, and signing
-├── Resources/                   # Bundle metadata and icon sources
-├── Scripts/                     # Icon tools and documentation renderer
-├── Tests/MacCaskTests/           # Automated tests
-├── docs/                        # Chinese README, design, progress, screenshots
-└── Sources/MacCask/
-    ├── App/                     # Entry point, navigation, shared state
-    ├── Overview/                # Dashboard and statistics
-    ├── InstalledApps/           # Scanning, details, uninstalling
-    ├── Homebrew/                # Formula and Cask management
-    ├── LaunchItems/             # Login items and launchd services
-    ├── Leftovers/               # Detection and cleanup
-    ├── Localization/            # Language preference and settings
-    ├── Storage/                 # Indexed SwiftData entities and repositories
-    ├── Platform/                # System interfaces and macOS implementations
-    ├── SharedUI/                # Reusable interface components
-    └── Utils/                   # Shared utilities and translation lookup
-```
-
-Business modules separate models, services, view models, and views. SwiftData stores size caches, ignored leftovers, and disabled login item records at `~/Library/Application Support/MacCask/MacCask.store`. Language and menu bar preferences use UserDefaults.
-
-See the [design document](docs/design.md) and [development steps](docs/design-steps.md) for implementation details. To uninstall MacCask, quit it and move its app bundle to the Trash; its local data is stored separately at the location above.
-
 ## Contributing
 
 Bug reports, improvements, and translations are welcome through [issues](https://github.com/MacCask/MacCask/issues) and [pull requests](https://github.com/MacCask/MacCask/pulls).
 
-1. Fork or check out the repository and create a branch for your change.
-2. Follow the repository's [development guidelines](agents.md): keep module boundaries clear, reuse shared utilities, and add Chinese comments to functions and key logic.
-3. Update `docs/design.md` and `docs/design-steps.md` when changing a feature or module; mark completed steps with `[已完成]`.
-4. Run `swift test` and check `make app` for changes affecting the app. For interface changes, inspect both English and Simplified Chinese, including longer labels.
-5. Describe the change, its purpose, and validation in your pull request.
+For code changes, follow the [development guidelines](agents.md), run `swift test`, and verify `make app`. Check both English and Simplified Chinese for interface changes. Include a description of the change and how it was verified in your pull request.
 
-English translations are stored in `Sources/MacCask/App/Resources/English.json`, keyed by the Chinese source text. Preserve interpolation placeholders such as `{0}` and `{1}`. Existing enum identifiers should remain stable when changing display text.
-
-### Regenerate documentation screenshots
-
-With Python 3 and the Swift toolchain available:
-
-```sh
-python3 Scripts/Documentation/render-screenshots.py
-```
-
-This exports English previews to `docs/screenshots/`. For a separate Chinese preview:
-
-```sh
-python3 Scripts/Documentation/render-screenshots.py --language zh-Hans --output /tmp/maccask-screenshots-zh
-```
-
-The renderer builds a temporary project copy with automatic scans disabled, an in-memory database, and demo data. It loads bundled [documentation icons and their source records](Scripts/Documentation/Icons/README.md), captures no desktop content, and leaves your language preference untouched.
+Architecture details are in the [design document](docs/design.md).
 
 ## License
 

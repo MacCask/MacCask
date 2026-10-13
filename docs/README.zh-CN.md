@@ -6,7 +6,7 @@
 
 ![MacCask 概览](screenshots/overview.png)
 
-*截图展示英语界面，使用模拟数据和常见软件图标，不包含真实电脑的安装列表或文件信息。*
+*截图使用演示数据。*
 
 ## 功能
 
@@ -26,7 +26,6 @@
 | Swift | Swift 6 工具链；项目采用 Swift 5 语言模式 |
 | 打包工具 | 完整 Xcode 26 或更新版本，并设为当前开发者目录，用于 Icon Composer 图标资源及 `actool` |
 | Homebrew | 可选，仅管理 Homebrew 软件包时需要 |
-| Python 3 | 可选，仅重新生成文档截图时需要 |
 
 项目使用 Swift Package Manager 和 Apple 框架，没有外部 Swift Package 依赖。默认构建当前 Mac 架构的程序；Makefile 不生成通用二进制。
 
@@ -82,6 +81,8 @@ open /Applications/MacCask.app
 
 ### 代码签名
 
+当前 MacCask 应用使用自签名证书签名，尚未经过 Apple 公证。首次打开时，macOS 可能显示安全提示。
+
 Makefile 默认使用钥匙串中第一个可用的代码签名身份；没有找到时使用 ad-hoc 签名。可以明确指定已有的自签身份：
 
 ```sh
@@ -127,7 +128,6 @@ swift test
 | `swift build` | 在 `.build/` 下生成 Debug 程序及资源 |
 | `swift run MacCask` | 构建并启动 Debug 程序 |
 | `swift test` | 运行自动化测试 |
-| `make icon` | 重新生成应用与菜单栏图标资源 |
 | `make build` | 生成图标并编译 Release 程序 |
 | `make app` | 创建并签名 `build/MacCask.app` |
 | `make run` | 打包并启动应用 |
@@ -176,8 +176,6 @@ swift test
 
 ![残留检查](screenshots/leftovers.png)
 
-演示图复用应用的 SwiftUI 仪表盘和详情组件，导航采用便于导出的静态布局。安装状态、版本、路径、磁盘占用和启动项均为模拟数据。
-
 ## 常见问题
 
 | 问题 | 检查方法 |
@@ -193,61 +191,13 @@ swift test
 
 报告问题时，请提供 macOS 与 Xcode 版本、启动方式、复现步骤和相关错误输出。分享日志或截图前，请移除个人路径等隐私信息。
 
-## 项目结构
-
-```text
-MacCask/
-├── Package.swift                # Swift Package Manager 配置
-├── Makefile                     # 构建、打包、安装和签名
-├── Resources/                   # 应用包元数据和图标源文件
-├── Scripts/                     # 图标工具和文档渲染脚本
-├── Tests/MacCaskTests/           # 自动化测试
-├── docs/                        # 中文 README、设计、进度和截图
-└── Sources/MacCask/
-    ├── App/                     # 应用入口、导航和全局状态
-    ├── Overview/                # 仪表盘和统计
-    ├── InstalledApps/           # 扫描、详情和卸载
-    ├── Homebrew/                # Formula 与 Cask 管理
-    ├── LaunchItems/             # 登录项和 launchd 服务
-    ├── Leftovers/               # 检测和清理
-    ├── Localization/            # 语言偏好和设置
-    ├── Storage/                 # 带索引的 SwiftData 实体与仓储
-    ├── Platform/                # 系统接口和 macOS 实现
-    ├── SharedUI/                # 共享界面组件
-    └── Utils/                   # 共享工具和翻译查询
-```
-
-业务模块按模型、服务、视图模型和视图拆分。SwiftData 在 `~/Library/Application Support/MacCask/MacCask.store` 保存大小缓存、已忽略的残留和已关闭的登录项。语言与菜单栏偏好使用 UserDefaults。
-
-实现细节见[设计文档](design.md)和[开发步骤](design-steps.md)。卸载 MacCask 时，先退出应用，再将应用包移到废纸篓；本地数据单独保存在上述位置。
-
 ## 参与贡献
 
 欢迎通过 [Issues](https://github.com/MacCask/MacCask/issues) 和 [Pull Requests](https://github.com/MacCask/MacCask/pulls) 提交问题、改进和翻译。
 
-1. Fork 或检出仓库，为改动创建分支。
-2. 遵守仓库的[开发约定](../agents.md)：保持模块边界清楚，复用共享工具，为函数和关键逻辑编写中文注释。
-3. 修改功能或模块时更新 `docs/design.md` 和 `docs/design-steps.md`，完成的步骤标记 `[已完成]`。
-4. 运行 `swift test`；影响应用的改动还需检查 `make app`。界面改动应检查英语与简体中文，特别是较长的文案。
-5. 在 PR 中说明改动、目的和验证结果。
+修改代码时请遵守[开发约定](../agents.md)，运行 `swift test` 并验证 `make app`。界面改动应检查英语与简体中文，并在 PR 中说明改动和验证结果。
 
-英语翻译位于 `Sources/MacCask/App/Resources/English.json`，使用中文原文作为键。请保留 `{0}`、`{1}` 等插值占位符，修改展示文本时不要改变现有枚举标识。
-
-### 重新生成文档截图
-
-安装 Python 3 和 Swift 工具链后运行：
-
-```sh
-python3 Scripts/Documentation/render-screenshots.py
-```
-
-默认导出英语预览到 `docs/screenshots/`。如需单独生成中文预览：
-
-```sh
-python3 Scripts/Documentation/render-screenshots.py --language zh-Hans --output /tmp/maccask-screenshots-zh
-```
-
-脚本在临时项目副本中禁用自动扫描，使用内存数据库和演示数据。它加载随文档保存的[图标及来源记录](../Scripts/Documentation/Icons/README.md)，不捕获桌面，也不修改你的语言偏好。
+架构细节见[设计文档](design.md)。
 
 ## 许可证
 
