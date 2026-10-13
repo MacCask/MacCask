@@ -2,7 +2,7 @@
 
 [English](releasing.md)
 
-推送与 `VERSION` 一致的 tag 后，`.github/workflows/release.yml` 会使用 Xcode 26.3，在 `macos-15-intel` 上测试和构建 x86_64，在 `macos-15` 上测试和构建 arm64。两个架构都成功后才公开 GitHub Release。应用使用你的自签证书，不执行 Apple 公证。
+推送与 `VERSION` 一致的 tag 后，`.github/workflows/release.yml` 会使用 Xcode 26.6，在 `macos-26-intel` 上测试和构建 x86_64，在 `macos-26` 上测试和构建 arm64。两个架构都成功后才公开 GitHub Release。应用使用你的自签证书，不执行 Apple 公证。
 
 ## 配置仓库 Secrets
 

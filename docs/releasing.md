@@ -2,7 +2,7 @@
 
 [简体中文](releasing.zh-CN.md)
 
-Pushing a tag matching `VERSION` starts `.github/workflows/release.yml`. It tests and builds x86_64 on `macos-15-intel` and arm64 on `macos-15`, using Xcode 26.3. Both builds must succeed before a GitHub Release is published. The apps use your self-signed certificate and are not notarized.
+Pushing a tag matching `VERSION` starts `.github/workflows/release.yml`. It tests and builds x86_64 on `macos-26-intel` and arm64 on `macos-26`, using Xcode 26.6. Both builds must succeed before a GitHub Release is published. The apps use your self-signed certificate and are not notarized.
 
 ## Configure repository secrets
 
