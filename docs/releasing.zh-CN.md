@@ -2,7 +2,7 @@
 
 [English](releasing.md)
 
-推送与 `VERSION` 一致的 tag 后，`.github/workflows/release.yml` 会使用 Xcode 26.6 和 Apple Silicon `macos-26` runner。SwiftPM 通过 `--arch x86_64` 交叉编译 Intel 程序，arm64 原生构建。含图形渲染的完整测试在原生 arm64 作业运行；Intel 压缩包独立编译，并校验架构和签名。两个架构都成功后才公开 GitHub Release。应用使用你的自签证书，不执行 Apple 公证。
+推送与 `VERSION` 一致的 tag 后，`.github/workflows/release.yml` 会使用 Xcode 26.6 和 Apple Silicon `macos-26` runner。SwiftPM 通过 `--arch x86_64` 交叉编译 Intel 程序，arm64 原生构建。含图形渲染的完整测试在原生 arm64 作业运行；Intel 应用独立编译并打包为 DMG，并校验架构和签名。两个架构都成功后才公开 GitHub Release。应用使用你的自签证书，不执行 Apple 公证。
 
 ## 配置仓库 Secrets
 
@@ -45,11 +45,11 @@ git push origin "v$(cat VERSION)"
 
 发布附件：
 
-- `MacCask-1.0.0-macos-x86_64.zip`：Intel Mac。
-- `MacCask-1.0.0-macos-arm64.zip`：Apple Silicon Mac。
-- `SHA256SUMS`：两个压缩包的校验和。
+- `MacCask-1.0.0-macos-x86_64.dmg`：Intel Mac。
+- `MacCask-1.0.0-macos-arm64.dmg`：Apple Silicon Mac。
+- `SHA256SUMS`：两个 DMG的校验和。
 
-每个 ZIP 中包含 `MacCask.app`。归档前会验证应用版本、签名和准确的 CPU 架构。新 Release 先保持草稿，附件全部上传成功后再公开。重新运行同一 tag 的工作流，可以替换已有 Release 中的同名附件。
+每个 DMG 中包含 `MacCask.app` 和 `Applications` 快捷方式，打开后将应用拖到 Applications 即可安装。归档前会验证应用版本、签名和准确的 CPU 架构。新 Release 先保持草稿，附件全部上传成功后再公开。重新运行同一 tag 的工作流，可以替换已有 Release 中的同名附件。
 
 ## 本地生成发布包
 
@@ -58,7 +58,7 @@ make release ARCH=x86_64
 make release ARCH=arm64
 ```
 
-压缩包写入 `build/releases/`，应用包仍位于 `build/MacCask.app`。最后一次构建会替换应用包，因此需要本地运行时，请最后构建本机架构。CI 为两种目标架构分别使用 Apple Silicon runner，完整测试在原生 arm64 作业运行。Intel GitHub 虚拟机无法可靠运行图形测试。
+DMG 写入 `build/releases/`，应用包仍位于 `build/MacCask.app`。最后一次构建会替换应用包，因此需要本地运行时，请最后构建本机架构。CI 为两种目标架构分别使用 Apple Silicon runner，完整测试在原生 arm64 作业运行。Intel GitHub 虚拟机无法可靠运行图形测试。
 
 ## 验证
 

@@ -191,10 +191,10 @@ macOS 没有「禁用登录项」的公开接口，关闭即从登录项中移�
 ### 版本与 GitHub Release
 
 - 根目录 `VERSION` 是唯一版本来源，初始 `1.0.0`，统一使用 `Scripts/Utils/read-version.sh` 校验数字三段版本；Makefile 不接受命令行版本覆盖。`ARCH` 明确指定 `x86_64` 或 `arm64`，编译和定位 SwiftPM 产物使用同一架构参数。
-- `make release` 先完成原有应用打包，再由 `Scripts/Release/package-app.sh` 验证版本、单一架构及签名，用 `ditto` 生成 `build/releases/MacCask-<版本>-macos-<架构>.zip`。
+- `make release` 先完成原有应用打包，再由 `Scripts/Release/package-app.sh` 验证版本、单一架构及签名，用 `ditto` 保留应用签名及资源，再由 `hdiutil` 生成压缩只读 HFS+ 映像 `build/releases/MacCask-<版本>-macos-<架构>.dmg`，包含应用和 Applications 安装快捷方式，并验证映像完整性。
 - `.github/workflows/release.yml` 由 tag 推送触发，先校验 tag 与 VERSION 相同（允许可选 `v` 前缀），检查签名 Secrets，再使用 Xcode 26.6 和两个 `macos-26` ARM runner，分别交叉编译 x86_64 和原生构建 arm64；图形与业务完整测试在原生 arm64 作业运行。Intel 虚拟机的 Metal 驱动会导致渲染测试崩溃或卡住，因此不作为图形测试宿主。
 - 签名仅需要 `BUILD_CERTIFICATE_BASE64` 和 `P12_PASSWORD` 两个 Secrets，签名身份由导入的 p12 自动识别。临时钥匙串密码由 runner 自行生成，`Scripts/Release/import-certificate.sh` 导入身份后用 `Scripts/Utils/select-signing-identity.sh` 选择唯一的代码签名私钥身份，按指纹匹配公开证书并建立自签证书信任，签名使用确切指纹；缺少私钥或 Secrets 则失败，不以 ad-hoc 签名发布。
-- 两个架构成功后，独立发布任务通过 GitHub 自动 Token 创建草稿 Release，上传两个 ZIP 和 `SHA256SUMS`，全部上传成功后公开。重跑支持覆盖同名附件。只有发布任务拥有 `contents: write`，构建任务结束始终清理临时签名材料。
+- 两个架构成功后，独立发布任务通过 GitHub 自动 Token 创建草稿 Release，上传两个 DMG 和 `SHA256SUMS`，全部上传成功后公开。重跑支持覆盖同名附件。只有发布任务拥有 `contents: write`，构建任务结束始终清理临时签名材料。
 - 当前签名身份为本机自签证书，不执行 Apple 公证；Release 说明明确这一状态。配置与导出步骤放在 `docs/releasing.md` 和 `docs/releasing.zh-CN.md`，README 只提供简短链接。
 
 - `make build`：Release 编译

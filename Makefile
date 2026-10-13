@@ -51,7 +51,7 @@ app: build
 	fi
 	@echo "打包完成: $(APP_BUNDLE)"
 
-# 生成当前架构的可分发 ZIP，版本与应用包均来自 VERSION。
+# 生成当前架构的可安装 DMG，版本与应用包均来自 VERSION。
 release: app
 	bash Scripts/Release/package-app.sh "$(APP_BUNDLE)" "$(ARCH)" "$(BUILD_DIR)/releases"
 

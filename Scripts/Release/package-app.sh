@@ -1,5 +1,5 @@
 #!/bin/bash
-# 验证签名、版本和单一 CPU 架构，再生成保留 macOS 资源的应用 ZIP。
+# 验证签名、版本和单一 CPU 架构，再生成带 Applications 快捷方式的安装磁盘映像。
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
@@ -23,7 +23,15 @@ if [ "$bundle_version" != "$version" ]; then
 fi
 codesign --verify --deep --strict "$app_bundle"
 mkdir -p "$output_directory"
-archive="$output_directory/MacCask-$version-macos-$architecture.zip"
-ditto -c -k --sequesterRsrc --keepParent "$app_bundle" "$archive"
-unzip -tq "$archive"
+archive="$output_directory/MacCask-$version-macos-$architecture.dmg"
+staging_directory="$(mktemp -d "${TMPDIR:-/tmp}/maccask-dmg.XXXXXX")"
+# 退出时清理暂存目录；ditto 保留应用资源及已有代码签名。
+trap 'rm -rf "$staging_directory"' EXIT
+ditto "$app_bundle" "$staging_directory/MacCask.app"
+ln -s /Applications "$staging_directory/Applications"
+codesign --verify --deep --strict "$staging_directory/MacCask.app"
+# 使用压缩只读 HFS+ 映像，支持拖动应用到 Applications 安装。
+hdiutil create -volname "MacCask $version ($architecture)" \
+    -srcfolder "$staging_directory" -fs HFS+ -format UDZO -ov "$archive"
+hdiutil verify "$archive"
 echo "发布包：$archive"
