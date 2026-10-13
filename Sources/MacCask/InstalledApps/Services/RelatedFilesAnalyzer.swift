@@ -17,14 +17,16 @@ struct RelatedFilesAnalysis: Sendable {
 enum RelatedFilesAnalyzer {
     /// 在后台分析应用关联文件，支持注入扫描位置用于隔离测试。
     static func analyze(_ app: InstalledApp, locations: [LibraryLocation] = LibraryLocations.all()) async -> RelatedFilesAnalysis {
-        await Task.detached(priority: .userInitiated) {
+        let worker = Task.detached(priority: .utility) {
             var result = RelatedFilesAnalysis()
             append(app.url, category: .application, to: &result)
             for location in locations {
+                guard !Task.isCancelled else { result.unreadableURLs.insert(location.url); break }
                 do {
                     let entries = try FileManager.default.contentsOfDirectory(
                         at: location.url, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])
                     for entry in entries {
+                        guard !Task.isCancelled else { result.unreadableURLs.insert(location.url); break }
                         guard IdentifierMatcher.entry(entry.lastPathComponent, belongsTo: app.bundleID,
                             appNames: app.matchNames, allowNameMatch: location.matchesByName) else { continue }
                         append(entry, category: location.category, to: &result)
@@ -38,7 +40,9 @@ enum RelatedFilesAnalyzer {
                 }
             }
             return result
-        }.value
+        }
+        // 将取消传递给独立文件遍历任务，不能仅忽略已经完成的结果。
+        return await withTaskCancellationHandler { await worker.value } onCancel: { worker.cancel() }
     }
 
     /// 汇总大小与读取状态，保留无法读取的关联目录供用户定位。

@@ -48,8 +48,17 @@ struct LaunchItemDetailView: View {
 
     /// 信息表
     private func info(_ item: LaunchItem) -> some View {
-        GroupBox(L10n.tr("信息")) {
-            Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 8) {
+        VStack(alignment: .leading, spacing: 16) {
+            Divider()
+            HStack {
+                Text(L10n.tr("启动时运行"))
+                Spacer()
+                Toggle(L10n.tr("启动时运行"), isOn: Binding(get: { item.isEnabled }, set: { model.setEnabled(item, $0) }))
+                    .toggleStyle(.switch).labelsHidden()
+                    .disabled(model.togglingIDs.contains(item.id))
+            }
+            Divider()
+            Grid(alignment: .leading, horizontalSpacing: 24, verticalSpacing: 16) {
                 InfoRow(title: item.source == .loginItem ? L10n.tr("名称") : "Label", value: item.label, monospaced: item.source != .loginItem)
                 if let program = item.program { InfoRow(title: L10n.tr("程序"), value: program, monospaced: true) }
                 if let plist = item.plistURL { InfoRow(title: L10n.tr("配置文件"), value: plist.path, monospaced: true) }
@@ -71,12 +80,7 @@ struct LaunchItemDetailView: View {
                 Button(L10n.tr("在访达中显示")) { Platform.current.system.revealInFinder([url]) }
             }
             Spacer()
-            Button(item.isEnabled ? L10n.tr("关闭启动项") : L10n.tr("开启启动项")) {
-                model.setEnabled(item, !item.isEnabled)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(item.isEnabled ? .red : .accentColor)
-            .disabled(model.togglingIDs.contains(item.id))
+
         }
         .padding(12)
         .background(.bar)

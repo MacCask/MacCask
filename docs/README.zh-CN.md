@@ -173,6 +173,14 @@ swift test
 
 ![应用程序与关联文件](screenshots/applications.png)
 
+### Homebrew 软件包
+
+![Homebrew 软件包](screenshots/homebrew.png)
+
+### 启动项
+
+![启动项](screenshots/startup-items.png)
+
 ### 残留检查
 
 ![残留检查](screenshots/leftovers.png)

@@ -12,10 +12,10 @@ struct TopAppsChart: View {
                 LoadingView(text: L10n.tr("正在计算应用大小…")).frame(height: 240)
             } else {
                 // 条形长度相对最大值缩放
-                let maxBytes = Double(items.first?.bytes ?? 1)
+                let maxBytes = Double(max(items.first?.bytes ?? 0, 1))
                 VStack(spacing: 4) {
                     ForEach(items, id: \.app.id) { item in
-                        TopAppRow(app: item.app, bytes: item.bytes,
+                        TopAppRow(app: item.app, bytes: item.bytes, isComplete: item.isComplete,
                                   ratio: Double(item.bytes) / maxBytes,
                                   diskPercent: model.disk.map { model.percent($0.fraction(of: item.bytes)) } ?? "") {
                             openApp(item.app)
@@ -31,6 +31,7 @@ struct TopAppsChart: View {
 private struct TopAppRow: View {
     let app: InstalledApp
     let bytes: Int64
+    let isComplete: Bool
     let ratio: Double
     let diskPercent: String
     let action: () -> Void
@@ -52,9 +53,9 @@ private struct TopAppRow: View {
                     .frame(height: 14)
                     .scaleEffect(x: max(ratio, 0.01), anchor: .leading)
                     .frame(maxWidth: .infinity)
-                Text(ByteFormatter.string(bytes))
+                Text(ByteFormatter.measured(bytes, isComplete: isComplete))
                     .font(.callout.monospacedDigit())
-                    .frame(width: 72, alignment: .trailing)
+                    .frame(width: 100, alignment: .trailing)
                 Text(diskPercent)
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)

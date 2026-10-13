@@ -79,15 +79,31 @@ private struct AppDetailContent: View {
         }
     }
 
-    /// 统计卡片
+    /// 按设计稿使用平面信息栏，以细分隔线区分统计，减少彩色卡片层级。
     private var stats: some View {
-        HStack(spacing: 12) {
-            StatCard(title: L10n.tr("版本"), value: app.version ?? L10n.tr("未知"), symbol: "tag")
-            StatCard(title: L10n.tr("应用包大小"), value: ByteFormatter.string(model.sizes[app.id]), symbol: "app")
-            StatCard(title: L10n.tr("关联数据"), value: model.isAnalyzing ? L10n.tr("分析中…") : ByteFormatter.measured(model.relatedDataSize, isComplete: model.isAnalysisComplete),
-                     symbol: "folder", tint: .orange)
-            StatCard(title: L10n.tr("上次使用"), value: DateText.relative(app.lastUsed), symbol: "clock", tint: .purple)
+        HStack(alignment: .top, spacing: 16) {
+            summaryValue(L10n.tr("版本"), value: app.version ?? L10n.tr("未知"), symbol: "tag")
+            Divider().frame(height: 48)
+            summaryValue(L10n.tr("应用包大小"), value: ByteFormatter.string(model.sizes[app.id]), symbol: "app")
+            Divider().frame(height: 48)
+            summaryValue(L10n.tr("关联数据"),
+                         value: model.isAnalyzing && model.relatedFiles.isEmpty ? L10n.tr("分析中…") : ByteFormatter.measured(model.relatedDataSize, isComplete: model.isAnalysisComplete),
+                         symbol: "folder")
+            Divider().frame(height: 48)
+            summaryValue(L10n.tr("上次使用"), value: DateText.relative(app.lastUsed), symbol: "clock")
         }
+        .padding(.vertical, 12)
+        .padding(.bottom, 12)
+        .overlay(alignment: .bottom) { Divider() }
+    }
+
+    /// 统计单元保留标题和数值，窄窗口允许标题换行。
+    private func summaryValue(_ title: String, value: String, symbol: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label(title, systemImage: symbol).font(.caption).foregroundStyle(.secondary)
+            Text(value).font(.headline).lineLimit(1).minimumScaleFactor(0.8)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     /// 明确说明部分统计，并复用平台设置入口与现有刷新操作。

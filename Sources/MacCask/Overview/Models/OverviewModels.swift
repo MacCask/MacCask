@@ -11,6 +11,8 @@ struct DiskSegment: Identifiable {
     let color: Color
     /// 点击跳转的模块（nil 不跳转）
     var section: SidebarSection? = nil
+    /// 读取不完整或尚未完成时，显示已知占用下限。
+    var isComplete = true
 }
 
 /// 应用来源分类（环形图的一块）
@@ -34,6 +36,8 @@ struct ActivityBucket: Identifiable {
     let isStale: Bool
     /// 是否为「未知」组（Spotlight 没有记录上次使用时间）
     var isUnknown = false
+    /// 分组中所有应用的总占用是否已完整读取。
+    var isComplete = true
 }
 
 /// 建议等级

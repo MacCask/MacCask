@@ -48,6 +48,13 @@ def prepare_sources(destination):
             text = replace_required(text, "didSet { if selection != oldValue { analyzeSelection() } }", "didSet {}")
         if path.name == "HomebrewViewModel.swift":
             text = replace_required(text, "var isBrewAvailable: Bool { service.isAvailable }", "var isBrewAvailable: Bool { true }")
+        if path.name == "AppState.swift":
+            text = replace_required(text, "InstalledAppsViewModel()", "InstalledAppsViewModel(useSizeCache: false)")
+        if path.name == "SidebarView.swift":
+            text = replace_required(text, '@AppStorage("appsNavigationExpanded")', '@State')
+        if path.name == "LaunchItemsListView.swift":
+            text = replace_required(text, "if let appPath = item.appPath, FileManager.default.fileExists(atPath: appPath) {",
+                                    "if let appPath = item.appPath {")
         if path.name == "DatabaseManager.swift":
             text = replace_required(text, "ModelConfiguration(schema: schema, url: Self.storeURL())",
                                 "ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)")
@@ -64,7 +71,7 @@ def prepare_sources(destination):
             text = replace_required(text, 'Locale.current.region?.identifier ?? "US"', '"US"')
         if path.name == "AppDetailView.swift":
             text = replace_required(text, "private struct AppDetailContent", "struct AppDetailContent")
-        if path.name in {"AppDetailView.swift", "LeftoverDetailView.swift"}:
+        if path.name == "AppDetailView.swift":
             text = text.replace("ScrollView {", "VStack(alignment: .leading, spacing: 0) {")
             text = text.replace("private func groupDetail", "func groupDetail")
         if path.name == "LibraryFileRow.swift":

@@ -6,12 +6,16 @@ struct ContentView: View {
 
     var body: some View {
         Group {
-            if state.section == .overview {
-                // 概览是整页仪表盘，使用两栏布局
+            if state.section == .overview || state.section == .leftovers {
+                // 整页工作区使用两栏导航，残留内部共享跨列表与详情的操作栏。
                 NavigationSplitView {
                     sidebar
                 } detail: {
-                    OverviewView()
+                    if state.section == .overview {
+                        OverviewView()
+                    } else {
+                        LeftoversWorkspaceView(model: state.leftovers)
+                    }
                 }
             } else {
                 NavigationSplitView {
@@ -33,7 +37,7 @@ struct ContentView: View {
     /// 侧边栏列
     private var sidebar: some View {
         SidebarView()
-            .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 260)
+            .navigationSplitViewColumnWidth(min: 220, ideal: 230, max: 300)
     }
 
     /// 内容列：当前模块的列表
@@ -57,34 +61,6 @@ struct ContentView: View {
         case .homebrew: HomebrewDetailView(model: state.homebrew)
         case .launchItems: LaunchItemDetailView(model: state.launchItems)
         case .leftovers: LeftoverDetailView(model: state.leftovers)
-        }
-    }
-}
-
-/// 侧边栏
-struct SidebarView: View {
-    @Environment(AppState.self) private var state
-
-    var body: some View {
-        @Bindable var state = state
-        List(selection: Binding(get: { state.section }, set: { if let value = $0 { state.section = value } })) {
-            Label(SidebarSection.overview.title, systemImage: SidebarSection.overview.symbol)
-                .tag(SidebarSection.overview)
-            Section(L10n.tr("管理")) {
-                ForEach(SidebarSection.allCases.filter { $0 != .overview }) { section in
-                    Label(section.title, systemImage: section.symbol)
-                        .badge(state.badge(for: section))
-                        .tag(section)
-                }
-            }
-        }
-        .listStyle(.sidebar)
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            Label(L10n.tr("文件均移到废纸篓，可恢复"), systemImage: "arrow.uturn.backward.circle")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-                .padding(10)
-                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }

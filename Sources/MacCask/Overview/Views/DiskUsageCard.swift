@@ -24,6 +24,7 @@ struct DiskUsageCard: View {
                 Text(L10n.tr("无法读取磁盘信息")).foregroundStyle(.secondary)
             }
         }
+        .task(id: model.categoryInput) { await model.updateDiskCategories(model.categoryInput) }
     }
 
     /// 右上角：已用百分比大数字
@@ -59,7 +60,7 @@ struct DiskUsageCard: View {
                         .frame(width: width)
                         .opacity(hoveredID == nil || hoveredID == segment.id ? 1 : 0.35)
                         .onHover { hoveredID = $0 ? segment.id : nil }
-                        .help(L10n.tr("{0}：{1}（占磁盘 {2}）", "\(segment.title)", "\(ByteFormatter.string(segment.bytes ?? 0))", "\(model.percent(disk.fraction(of: segment.bytes ?? 0)))"))
+                        .help(L10n.tr("{0}：{1}（占磁盘 {2}）", "\(segment.title)", "\(ByteFormatter.measured(segment.bytes ?? 0, isComplete: segment.isComplete))", "\(model.percent(disk.fraction(of: segment.bytes ?? 0)))"))
                 }
                 Rectangle().fill(ChartPalette.track)
                     .opacity(hoveredID == nil || hoveredID == "free" ? 1 : 0.5)
@@ -90,7 +91,7 @@ struct DiskUsageCard: View {
     @ViewBuilder
     private func legendRow(_ segment: DiskSegment, disk: DiskUsage) -> some View {
         let item = LegendItem(color: segment.color, title: segment.title,
-                              value: segment.bytes.map(ByteFormatter.string) ?? L10n.tr("计算中…"),
+                              value: segment.bytes.map { ByteFormatter.measured($0, isComplete: segment.isComplete) } ?? L10n.tr("计算中…"),
                               secondary: segment.bytes.map { model.percent(disk.fraction(of: $0)) },
                               isDimmed: hoveredID != nil && hoveredID != segment.id)
             .contentShape(Rectangle())

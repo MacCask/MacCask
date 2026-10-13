@@ -12,7 +12,8 @@ struct InstalledAppsListView: View {
                 List(selection: $model.selection) {
                     ForEach(model.visibleApps) { app in
                         AppRowView(app: app, size: model.totalSizes[app.id]?.bytes,
-                                   isSizeComplete: model.totalSizes[app.id]?.isComplete ?? false).tag(app.id)
+                                   isSizeComplete: model.totalSizes[app.id]?.isComplete ?? false,
+                                   isUpdating: model.updatingAppIDs.contains(app.id)).tag(app.id)
                     }
                 }
                 .overlay {
@@ -20,7 +21,7 @@ struct InstalledAppsListView: View {
                         ContentUnavailableView.search
                     }
                 }
-                .safeAreaInset(edge: .top, spacing: 0) { filterBar }
+                .safeAreaInset(edge: .top, spacing: 0) { InstalledAppsListHeader(model: model) }
                 .safeAreaInset(edge: .bottom, spacing: 0) {
                     ListStatusBar(text: L10n.tr("{0} 个应用 · 共 {1}", "\(model.visibleApps.count)", "\(model.visibleTotalSizeText)"))
                 }
@@ -28,48 +29,9 @@ struct InstalledAppsListView: View {
         }
         .navigationTitle(L10n.tr("应用程序"))
         .searchable(text: $model.searchText, prompt: L10n.tr("搜索名称或 Bundle ID"))
-        .toolbar { toolbar }
         .task { await model.loadIfNeeded() }
     }
 
-    /// 顶部分类筛选
-    private var filterBar: some View {
-        Picker(L10n.tr("分类"), selection: $model.filter) {
-            ForEach(AppFilter.allCases) { filter in
-                Text(filter.title).tag(filter)
-            }
-        }
-        .pickerStyle(.segmented)
-        .labelsHidden()
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-    }
-
-    /// 工具栏：排序、刷新
-    @ToolbarContentBuilder
-    private var toolbar: some ToolbarContent {
-        ToolbarItemGroup {
-            Menu {
-                Picker(L10n.tr("排序方式"), selection: $model.sortOrder) {
-                    ForEach(AppSortOrder.allCases) { order in
-                        Text(order.title).tag(order)
-                    }
-                }
-                .pickerStyle(.inline)
-            } label: {
-                Label(L10n.tr("排序"), systemImage: "arrow.up.arrow.down")
-            }
-            .help(L10n.tr("排序方式"))
-
-            Button {
-                Task { await model.refresh() }
-            } label: {
-                Label(L10n.tr("刷新"), systemImage: "arrow.clockwise")
-            }
-            .disabled(model.isScanning)
-            .help(L10n.tr("重新扫描应用"))
-        }
-    }
 }
 
 /// 应用列表行
@@ -77,6 +39,7 @@ struct AppRowView: View {
     let app: InstalledApp
     let size: Int64?
     var isSizeComplete = true
+    var isUpdating = false
 
     var body: some View {
         HStack(spacing: 10) {
@@ -96,6 +59,10 @@ struct AppRowView: View {
                 }
             }
             Spacer(minLength: 8)
+            if isUpdating {
+                ProgressView().controlSize(.mini)
+                    .accessibilityLabel(L10n.tr("正在计算应用大小…"))
+            }
             Text(size.map { ByteFormatter.measured($0, isComplete: isSizeComplete) } ?? L10n.tr("计算中…"))
                 .font(.callout.monospacedDigit())
                 .foregroundStyle(.secondary)

@@ -16,7 +16,19 @@ final class LeftoversViewModel {
     /// 是否正在删除
     private(set) var isTrashing = false
     /// 多选的分组
-    var selection: Set<LeftoverGroup.ID> = []
+    var selection: Set<LeftoverGroup.ID> = [] {
+        didSet {
+            // 多选后继续展示最近加入选择的分组，不让详情变成空白汇总。
+            if let added = selection.subtracting(oldValue).sorted().first { focusedGroupID = added }
+            if let focusedGroupID, !selection.contains(focusedGroupID) { self.focusedGroupID = selection.sorted().first }
+        }
+    }
+    private var focusedGroupID: LeftoverGroup.ID?
+
+    /// 多选操作针对全部选中项，详情只展示当前聚焦的分组。
+    var detailGroup: LeftoverGroup? {
+        groups.first { $0.id == focusedGroupID } ?? selectedGroups.first
+    }
     /// 显示已忽略的项
     var showIgnored = false
     /// 显示低可信度的项
@@ -90,6 +102,13 @@ final class LeftoversViewModel {
             groups[index].isIgnored = value
         }
         if value && !showIgnored { selection.subtract(ids) }
+    }
+
+    /// 右键与底部批量操作共享确认内容，以待处理快照计算数量及大小。
+    func trashConfirmationTitle(for ids: Set<LeftoverGroup.ID>) -> String {
+        let targets = groups.filter { ids.contains($0.id) }
+        return L10n.tr("将 {0} 项残留（{1}）移到废纸篓？", "\(targets.count)",
+                       "\(ByteFormatter.string(targets.reduce(0) { $0 + $1.totalSize }))")
     }
 
     /// 将指定分组的全部文件移到废纸篓

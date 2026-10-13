@@ -23,8 +23,7 @@ struct HomebrewListView: View {
             }
         }
         .navigationTitle("Homebrew")
-        .searchable(text: $model.searchText, placement: .sidebar, prompt: L10n.tr("搜索包"))
-        .toolbar { toolbar }
+        .searchable(text: $model.searchText, placement: .toolbar, prompt: L10n.tr("搜索包"))
         .task { await model.loadIfNeeded() }
         .sheet(item: $model.activeSession) { session in
             CommandLogSheet(session: session)
@@ -44,70 +43,10 @@ struct HomebrewListView: View {
                                        systemImage: model.onlyOutdated ? "checkmark.seal" : "magnifyingglass")
             }
         }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            Picker(L10n.tr("类型"), selection: $model.kind) {
-                ForEach(BrewPackageKind.allCases) { kind in
-                    Text("\(kind.rawValue)  \(model.count(of: kind))").tag(kind)
-                }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            ListStatusBar(text: statusText)
-        }
+        .safeAreaInset(edge: .top, spacing: 0) { HomebrewListHeader(model: model) }
+        .safeAreaInset(edge: .bottom, spacing: 0) { HomebrewUpdateBar(model: model) }
     }
 
-    /// 底部状态栏文本
-    private var statusText: String {
-        let outdated = model.outdatedPackages.count
-        let base = L10n.tr("{0} 个{1}", "\(model.visiblePackages.count)", "\(model.kind.title)")
-        return outdated > 0 ? base + L10n.tr(" · {0} 个可更新", "\(outdated)") : base + L10n.tr(" · 全部最新")
-    }
-
-    /// 工具栏：筛选、全部升级、刷新与更多操作
-    @ToolbarContentBuilder
-    private var toolbar: some ToolbarContent {
-        ToolbarItemGroup {
-            Menu {
-                Toggle(L10n.tr("仅显示可更新"), isOn: $model.onlyOutdated)
-                if model.kind == .formula {
-                    Toggle(L10n.tr("隐藏依赖项"), isOn: $model.hideDependencies)
-                }
-            } label: {
-                Label(L10n.tr("筛选"), systemImage: model.onlyOutdated || model.hideDependencies
-                      ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
-            }
-            .help(L10n.tr("筛选"))
-
-            if !model.outdatedPackages.isEmpty {
-                Button {
-                    model.upgradeAll()
-                } label: {
-                    Label(L10n.tr("全部升级"), systemImage: "arrow.up.circle")
-                }
-                .help(L10n.tr("升级当前列表中所有可更新的包"))
-            }
-
-            Menu {
-                Button(L10n.tr("更新 Homebrew 源")) { model.updateBrew() }
-                Button(L10n.tr("清理旧版本与缓存")) { model.cleanup() }
-            } label: {
-                Label(L10n.tr("更多"), systemImage: "ellipsis.circle")
-            }
-            .help(L10n.tr("更多操作"))
-
-            Button {
-                Task { await model.refresh() }
-            } label: {
-                Label(L10n.tr("刷新"), systemImage: "arrow.clockwise")
-            }
-            .disabled(model.isLoading)
-            .help(L10n.tr("重新读取已安装的包"))
-        }
-    }
 }
 
 /// Homebrew 包列表行

@@ -14,22 +14,8 @@ struct OverviewView: View {
         }
         .background(Color(nsColor: .windowBackgroundColor))
         .navigationTitle(L10n.tr("概览"))
-        .toolbar {
-            ToolbarItem {
-                Button {
-                    Task { await model.refresh() }
-                } label: {
-                    if model.isRefreshing {
-                        ProgressView().controlSize(.small)
-                    } else {
-                        Label(L10n.tr("刷新"), systemImage: "arrow.clockwise")
-                    }
-                }
-                .disabled(model.isRefreshing)
-                .help(L10n.tr("重新扫描所有数据"))
-            }
-        }
         .task { await model.loadIfNeeded() }
+        .task(id: model.apps.usageRevision) { await model.refreshSupplementaryStatistics() }
     }
 }
 

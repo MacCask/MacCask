@@ -95,6 +95,8 @@ protocol SystemIntegrating: Sendable {
     @MainActor func activateApplication()
     /// 正常退出应用，交由系统完成窗口和进程清理。
     @MainActor func terminateApplication()
+    /// 将原生菜单标题同步到应用当前语言。
+    @MainActor func synchronizeMenuLanguage()
     /// 为直接运行的开发进程设置应用图标；正式应用使用系统资源目录。
     @MainActor func setApplicationIcon(from url: URL)
     /// 在访达中显示并选中文件
@@ -115,6 +117,16 @@ protocol SystemIntegrating: Sendable {
     func startupDiskUsage() -> DiskUsage?
 }
 
+/// 文件变化接口：业务层只处理路径与保守失效标记，不依赖平台事件类型。
+@MainActor
+protocol FileChangeMonitoring: AnyObject {
+    /// 监听目录层级变化，回调不得执行实际扫描。
+    @discardableResult
+    func start(paths: [URL], onChange: @escaping @Sendable ([URL], Bool) -> Void) -> Bool
+    /// 停止监听并释放资源。
+    func stop()
+}
+
 /// 平台服务集合，业务层统一通过 `Platform.current` 获取
 struct PlatformServices: Sendable {
     let commandRunner: any CommandRunning
@@ -122,6 +134,7 @@ struct PlatformServices: Sendable {
     let trasher: any FileTrashing
     let loginItems: any LoginItemManaging
     let system: any SystemIntegrating
+    let makeFileMonitor: @MainActor @Sendable () -> any FileChangeMonitoring
 }
 
 /// 平台服务入口
@@ -136,7 +149,8 @@ enum Platform {
             privilegedRunner: privileged,
             trasher: MacFileTrasher(privilegedRunner: privileged),
             loginItems: MacLoginItemManager(runner: runner),
-            system: MacSystemIntegration()
+            system: MacSystemIntegration(),
+            makeFileMonitor: { MacFileChangeMonitor() }
         )
         #else
         #error("暂不支持当前平台")

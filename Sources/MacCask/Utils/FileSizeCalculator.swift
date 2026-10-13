@@ -22,6 +22,7 @@ enum FileSizeCalculator {
     /// 递归计算实际磁盘占用，不跟随符号链接，并记录读取失败的路径。
     static func measure(of url: URL) -> FileSizeMeasurement {
         var result = FileSizeMeasurement()
+        guard !Task.isCancelled else { result.unreadableURLs.insert(url); return result }
         do {
             let values = try url.resourceValues(forKeys: fileKeys)
             if values.isSymbolicLink == true { return result }
@@ -49,6 +50,8 @@ enum FileSizeCalculator {
             return result
         }
         for case let fileURL as URL in enumerator {
+            // 目录遍历可协作取消；部分结果不能作为完整容量保存。
+            guard !Task.isCancelled else { result.unreadableURLs.insert(url); break }
             do {
                 let values = try fileURL.resourceValues(forKeys: fileKeys)
                 guard values.isSymbolicLink != true, values.isRegularFile == true else { continue }
@@ -66,7 +69,9 @@ enum FileSizeCalculator {
 
     /// 在后台线程计算大小，避免阻塞主线程。
     static func allocatedSizeInBackground(of url: URL) async -> Int64 {
-        await Task.detached(priority: .utility) { allocatedSize(of: url) }.value
+        let worker = Task.detached(priority: .utility) { allocatedSize(of: url) }
+        // 页面更新取消等待时也停止过期遍历，避免多个缓存统计同时占用磁盘。
+        return await withTaskCancellationHandler { await worker.value } onCancel: { worker.cancel() }
     }
 
     /// 读取文件修改时间。

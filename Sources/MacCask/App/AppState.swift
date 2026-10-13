@@ -51,8 +51,28 @@ final class AppState {
                                      launchItems: launchItems, leftovers: leftovers)
     }
 
+    /// 统一刷新入口随当前模块显示忙碌状态，避免重复触发扫描。
+    var isCurrentSectionRefreshing: Bool { isRefreshing(section) }
+
+    /// 按指定模块查询状态，侧栏未选中的模块也能正确显示进度。
+    func isRefreshing(_ section: SidebarSection) -> Bool {
+        switch section {
+        case .overview: return overview.isRefreshing
+        case .apps: return installedApps.isScanning
+        case .homebrew: return homebrew.isLoading
+        case .launchItems: return launchItems.isLoading
+        case .leftovers: return leftovers.isScanning
+        }
+    }
+
     /// 刷新当前模块
     func refreshCurrentSection() async {
+        await refresh(section)
+    }
+
+    /// 刷新指定模块，不改变当前页面；概览沿用刷新全部数据的语义。
+    func refresh(_ section: SidebarSection) async {
+        guard !isRefreshing(section) else { return }
         switch section {
         case .overview: await overview.refresh()
         case .apps: await installedApps.refresh()

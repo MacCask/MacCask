@@ -25,6 +25,22 @@ struct LibraryFile: Identifiable, Hashable, Sendable {
 }
 
 extension Array where Element == LibraryFile {
+    /// 按路径去重，并排除已包含在父目录统计中的子项。
+    var uniqueFiles: [LibraryFile] {
+        var result: [LibraryFile] = []
+        var paths = Set<String>()
+        // 每个路径仅标准化一次；按父目录索引查询，避免逐对 URL 比较。
+        let entries = map { (file: $0, path: $0.url.standardizedFileURL.path) }
+            .sorted { $0.path.count < $1.path.count }
+        for entry in entries {
+            if !PathHierarchy.ancestors(of: entry.path).contains(where: { paths.contains($0) }) {
+                paths.insert(entry.path)
+                result.append(entry.file)
+            }
+        }
+        return result
+    }
+
     /// 合计大小
     var totalSize: Int64 { reduce(0) { $0 + $1.sizeBytes } }
 }

@@ -5,62 +5,49 @@ struct LaunchItemsListView: View {
     @Bindable var model: LaunchItemsViewModel
 
     var body: some View {
-        Group {
-            if model.isLoading && model.items.isEmpty {
-                LoadingView(text: L10n.tr("正在读取启动项…"))
-            } else {
-                List(selection: $model.selection) {
-                    if let error = model.loginItemError {
-                        Label(error, systemImage: "exclamationmark.triangle")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    ForEach(LaunchItemSource.allCases) { source in
-                        let items = model.items(in: source)
-                        if !items.isEmpty {
-                            Section {
-                                ForEach(items) { item in
-                                    LaunchItemRow(model: model, item: item).tag(item.id)
+        VStack(spacing: 0) {
+            LaunchItemsListHeader(model: model)
+            Group {
+                if model.isLoading && model.items.isEmpty {
+                    LoadingView(text: L10n.tr("正在读取启动项…"))
+                } else {
+                    List(selection: $model.selection) {
+                        if let error = model.loginItemError {
+                            Label(error, systemImage: "exclamationmark.triangle")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        ForEach(LaunchItemSource.allCases) { source in
+                            let items = model.items(in: source)
+                            if !items.isEmpty {
+                                Section {
+                                    ForEach(items) { item in
+                                        LaunchItemRow(model: model, item: item).tag(item.id)
+                                    }
+                                } header: {
+                                    HStack {
+                                        Label(source.title, systemImage: source.symbol)
+                                        Spacer()
+                                        Text(L10n.tr("{0}/{1} 已开启", "\(items.filter(\.isEnabled).count)", "\(items.count)"))
+                                            .monospacedDigit()
+                                    }
+                                    .help(source.subtitle)
                                 }
-                            } header: {
-                                HStack {
-                                    Label(source.title, systemImage: source.symbol)
-                                    Spacer()
-                                    Text(L10n.tr("{0}/{1} 已开启", "\(items.filter(\.isEnabled).count)", "\(items.count)"))
-                                        .monospacedDigit()
-                                }
-                                .help(source.subtitle)
                             }
                         }
                     }
-                }
-                .overlay {
-                    if model.items.isEmpty {
-                        ContentUnavailableView(L10n.tr("没有第三方启动项"), systemImage: "power")
+                    .overlay {
+                        if model.items.isEmpty {
+                            ContentUnavailableView(L10n.tr("没有第三方启动项"), systemImage: "power")
+                        }
                     }
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            LaunchItemsSettingsLink()
         }
         .navigationTitle(L10n.tr("启动项"))
         .searchable(text: $model.searchText, prompt: L10n.tr("搜索启动项"))
-        .toolbar {
-            ToolbarItemGroup {
-                Button {
-                    Platform.current.system.openLoginItemsSettings()
-                } label: {
-                    Label(L10n.tr("系统登录项设置"), systemImage: "gearshape")
-                }
-                .help(L10n.tr("在系统设置中管理「允许在后台」的项目"))
-
-                Button {
-                    Task { await model.refresh() }
-                } label: {
-                    Label(L10n.tr("刷新"), systemImage: "arrow.clockwise")
-                }
-                .disabled(model.isLoading)
-                .help(L10n.tr("重新读取启动项"))
-            }
-        }
         .alert(L10n.tr("操作失败"), isPresented: Binding(get: { model.alertMessage != nil }, set: { if !$0 { model.alertMessage = nil } })) {
             Button(L10n.tr("好")) {}
         } message: {

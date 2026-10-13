@@ -14,6 +14,31 @@ final class OverviewViewModel {
     /// 是否正在刷新
     private(set) var isRefreshing = false
     private var hasLoaded = false
+    private(set) var diskCategorySnapshot: (apps: Int64, caches: Int64?, leftovers: Int64)?
+
+    /// 以值快照驱动后台分类；悬停、窗口调整等重绘不会再次计算目录归属。
+    struct CategoryInput: Hashable, Sendable {
+        let appFiles: [LibraryFile]
+        let leftoverFiles: [LibraryFile]
+        let cacheBytes: Int64?
+    }
+
+    var categoryInput: CategoryInput {
+        CategoryInput(appFiles: thirdPartyApps.flatMap { apps.usageFiles[$0.id] ?? [] },
+                      leftoverFiles: leftovers.groups.filter { !$0.isIgnored }.flatMap(\.files),
+                      cacheBytes: cacheBytes)
+    }
+
+    /// 合并扫描结果变更后在后台计算，取消的旧快照不得覆盖新值。
+    func updateDiskCategories(_ input: CategoryInput) async {
+        do { try await Task.sleep(for: .milliseconds(100)) } catch { return }
+        let result = await Task.detached(priority: .utility) {
+            OverviewService.diskCategories(appFiles: input.appFiles,
+                leftoverFiles: input.leftoverFiles, cacheBytes: input.cacheBytes)
+        }.value
+        guard !Task.isCancelled else { return }
+        diskCategorySnapshot = result
+    }
 
     let apps: InstalledAppsViewModel
     let homebrew: HomebrewViewModel
@@ -45,9 +70,10 @@ final class OverviewViewModel {
     /// 并行加载：磁盘容量立即读取，各模块数据与额外统计并行进行
     private func load(force: Bool) async {
         guard !isRefreshing else { return }
+        hasLoaded = true
         isRefreshing = true
         defer { isRefreshing = false }
-        disk = Platform.current.system.startupDiskUsage()
+        disk = await Task.detached(priority: .utility) { Platform.current.system.startupDiskUsage() }.value
         async let brewSize = OverviewService.homebrewDiskSize()
         async let cacheSize = OverviewService.userCacheSize()
         async let appsDone: Void = force ? apps.refresh() : apps.loadIfNeeded()
@@ -57,7 +83,27 @@ final class OverviewViewModel {
         homebrewBytes = await brewSize
         cacheBytes = await cacheSize
         _ = await (appsDone, brewDone, launchDone, leftoversDone)
-        disk = Platform.current.system.startupDiskUsage()
+        disk = await Task.detached(priority: .utility) { Platform.current.system.startupDiskUsage() }.value
+    }
+
+    /// 联动已有应用结果；短暂合并批次变化，不重新扫描应用或生成另一份占用缓存。
+    func refreshSupplementaryStatistics() async {
+        guard hasLoaded, !isRefreshing, !apps.isScanning else { return }
+        do { try await Task.sleep(for: .milliseconds(500)) } catch { return }
+        guard !Task.isCancelled else { return }
+        disk = await Task.detached(priority: .utility) { Platform.current.system.startupDiskUsage() }.value
+        async let brewSize = OverviewService.homebrewDiskSize()
+        async let cacheSize = OverviewService.userCacheSize()
+        let values = await (brewSize, cacheSize)
+        guard !Task.isCancelled else { return }
+        homebrewBytes = values.0
+        cacheBytes = values.1
+        disk = await Task.detached(priority: .utility) { Platform.current.system.startupDiskUsage() }.value
+    }
+
+    /// 部分读取的占用在首页也保留“至少”标识。
+    var appSizesComplete: Bool {
+        appSizesReady && thirdPartyApps.allSatisfy { apps.totalSizes[$0.id]?.isComplete == true }
     }
 
     // MARK: - 应用统计
@@ -67,21 +113,21 @@ final class OverviewViewModel {
 
     /// 应用大小是否全部计算完成
     var appSizesReady: Bool {
-        apps.hasLoaded && thirdPartyApps.allSatisfy { apps.sizes[$0.id] != nil }
+        apps.hasLoaded && thirdPartyApps.allSatisfy { apps.totalSizes[$0.id] != nil }
     }
 
     /// 第三方应用合计大小（计算完成前为 nil）
     var thirdPartyAppBytes: Int64? {
-        appSizesReady ? thirdPartyApps.reduce(0) { $0 + (apps.sizes[$1.id] ?? 0) } : nil
+        appSizesReady ? thirdPartyApps.reduce(0) { $0 + (apps.totalSizes[$1.id]?.bytes ?? 0) } : nil
     }
 
     /// 占用最大的应用
-    func topApps(limit: Int = 8) -> [(app: InstalledApp, bytes: Int64)] {
+    func topApps(limit: Int = 8) -> [(app: InstalledApp, bytes: Int64, isComplete: Bool)] {
         thirdPartyApps
-            .compactMap { app in apps.sizes[app.id].map { (app, $0) } }
+            .compactMap { app in apps.totalSizes[app.id].map { (app, $0.bytes, $0.isComplete) } }
             .sorted { $0.1 > $1.1 }
             .prefix(limit)
-            .map { (app: $0.0, bytes: $0.1) }
+            .map { (app: $0.0, bytes: $0.1, isComplete: $0.2) }
     }
 
     /// 应用来源分布；颜色跟随来源（Homebrew 始终为橙色），与磁盘分段条一致
@@ -101,7 +147,7 @@ final class OverviewViewModel {
 
     /// 第三方应用的活跃度分组
     var activityBuckets: [ActivityBucket] {
-        OverviewService.activityBuckets(apps: thirdPartyApps, sizes: apps.sizes)
+        OverviewService.activityBuckets(apps: thirdPartyApps, sizes: apps.totalSizes)
     }
 
     // MARK: - 磁盘分段
@@ -109,17 +155,14 @@ final class OverviewViewModel {
     /// 磁盘分段：第三方应用 / Homebrew / 用户缓存 / 残留文件 / 其他已用
     var diskSegments: [DiskSegment] {
         guard let disk else { return [] }
-        // 残留中位于缓存目录的部分已计入「用户缓存」，这里排除避免重复计算
-        let cachesPath = LibraryLocations.home.appendingPathComponent("Library/Caches").path + "/"
-        let leftoverBytes: Int64? = leftovers.hasLoaded
-            ? leftovers.groups.filter { !$0.isIgnored }.flatMap(\.files)
-                .filter { !$0.url.path.hasPrefix(cachesPath) }.totalSize
-            : nil
-        let known = [thirdPartyAppBytes, homebrewBytes, cacheBytes, leftoverBytes].compactMap { $0 }.reduce(0, +)
+        let categorized = diskCategorySnapshot
+        let appBytes: Int64? = appSizesReady ? categorized?.apps : nil
+        let leftoverBytes: Int64? = leftovers.hasLoaded ? categorized?.leftovers : nil
+        let known = [appBytes, homebrewBytes, categorized?.caches, leftoverBytes].compactMap { $0 }.reduce(0, +)
         return [
-            DiskSegment(id: "apps", title: L10n.tr("第三方应用"), bytes: thirdPartyAppBytes, color: ChartPalette.blue, section: .apps),
+            DiskSegment(id: "apps", title: L10n.tr("第三方应用"), bytes: appBytes, color: ChartPalette.blue, section: .apps, isComplete: appSizesComplete),
             DiskSegment(id: "brew", title: "Homebrew", bytes: homebrewBytes, color: ChartPalette.orange, section: .homebrew),
-            DiskSegment(id: "cache", title: L10n.tr("用户缓存"), bytes: cacheBytes, color: ChartPalette.aqua),
+            DiskSegment(id: "cache", title: L10n.tr("用户缓存"), bytes: categorized?.caches, color: ChartPalette.aqua),
             DiskSegment(id: "leftovers", title: L10n.tr("残留文件"), bytes: leftoverBytes, color: ChartPalette.yellow, section: .leftovers),
             DiskSegment(id: "other", title: L10n.tr("其他已用"), bytes: max(disk.usedBytes - known, 0), color: ChartPalette.neutral)
         ]
@@ -169,7 +212,7 @@ final class OverviewViewModel {
         }
         if let stale = staleBucket {
             result.append(Insight(level: .info, title: L10n.tr("{0} 个应用超过一年未使用", "\(stale.count)"),
-                                  detail: L10n.tr("共占用 {0}，可考虑卸载", "\(ByteFormatter.string(stale.bytes))"), section: .apps))
+                                  detail: L10n.tr("共占用 {0}，可考虑卸载", "\(ByteFormatter.measured(stale.bytes, isComplete: stale.isComplete))"), section: .apps))
         }
         let daemons = launchItems.items.filter { $0.source == .systemDaemon && $0.isEnabled }.count
         if daemons > 5 {

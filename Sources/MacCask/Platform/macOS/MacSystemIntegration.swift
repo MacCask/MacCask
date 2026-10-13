@@ -15,6 +15,12 @@ struct MacSystemIntegration: SystemIntegrating {
         NSApp.terminate(nil)
     }
 
+    /// 原生菜单不继承 SwiftUI locale，需要显式同步当前语言。
+    @MainActor func synchronizeMenuLanguage() {
+        guard let menu = NSApp.mainMenu else { return }
+        MacMenuLocalization.update(menu, language: L10n.language)
+    }
+
     /// 开发启动时加载兼容图标，不覆盖正式应用的系统动态外观。
     @MainActor func setApplicationIcon(from url: URL) {
         guard let image = NSImage(contentsOf: url) else { return }

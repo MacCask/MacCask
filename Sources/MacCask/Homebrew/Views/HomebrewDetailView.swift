@@ -26,13 +26,11 @@ private struct BrewPackageDetail: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 header
-                stats
-                info
                 if let desc = package.desc {
-                    GroupBox(L10n.tr("简介")) {
-                        Text(desc).frame(maxWidth: .infinity, alignment: .leading).padding(4)
-                    }
+                    Text(desc).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading)
                 }
+                Divider()
+                info
             }
             .padding(24)
         }
@@ -66,20 +64,13 @@ private struct BrewPackageDetail: View {
         }
     }
 
-    /// 统计卡片
-    private var stats: some View {
-        HStack(spacing: 12) {
-            StatCard(title: L10n.tr("已安装"), value: package.installedVersion, symbol: "shippingbox")
-            StatCard(title: L10n.tr("最新版本"), value: package.latestVersion, symbol: "sparkles",
-                     tint: package.isOutdated ? .green : .accentColor)
-            StatCard(title: L10n.tr("占用空间"), value: ByteFormatter.string(model.sizes[package.id]), symbol: "internaldrive")
-        }
-    }
-
     /// 详细信息表
     private var info: some View {
-        GroupBox(L10n.tr("信息")) {
-            Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 8) {
+        VStack(alignment: .leading, spacing: 16) {
+            Grid(alignment: .leading, horizontalSpacing: 24, verticalSpacing: 16) {
+                InfoRow(title: L10n.tr("已安装"), value: package.installedVersion)
+                InfoRow(title: L10n.tr("最新版本"), value: package.latestVersion)
+                InfoRow(title: L10n.tr("占用空间"), value: ByteFormatter.string(model.sizes[package.id]))
                 InfoRow(title: L10n.tr("名称"), value: package.name, monospaced: true)
                 if let tap = package.tap { InfoRow(title: L10n.tr("来源"), value: tap) }
                 if package.kind == .formula {

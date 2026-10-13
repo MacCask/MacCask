@@ -162,5 +162,17 @@ jobs:
               --title "MacCask $RELEASE_VERSION" --notes-file "$notes"
           fi
           gh release upload "$RELEASE_TAG" "$intel" "$arm" SHA256SUMS --clobber
+          # DMG 与校验和上传成功后，仅移除当前版本遗留的两份 ZIP 附件。
+          legacy_intel="MacCask-$RELEASE_VERSION-macos-x86_64.zip"
+          legacy_arm="MacCask-$RELEASE_VERSION-macos-arm64.zip"
+          asset_list="$RUNNER_TEMP/maccask-release-assets.txt"
+          gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name' > "$asset_list"
+          while IFS= read -r asset; do
+            case "$asset" in
+              "$legacy_intel"|"$legacy_arm")
+                gh release delete-asset "$RELEASE_TAG" "$asset" --yes
+                ;;
+            esac
+          done < "$asset_list"
           gh release edit "$RELEASE_TAG" --draft=false \
             --title "MacCask $RELEASE_VERSION" --notes-file "$notes"

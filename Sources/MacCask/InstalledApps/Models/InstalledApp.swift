@@ -41,6 +41,17 @@ enum AppFilter: String, CaseIterable, Identifiable {
     /// 展示文本随语言变化，原始值继续作为稳定标识。
     var title: String { L10n.tr(rawValue) }
 
+    /// 导航与列表标题使用完整名称，避免孤立的分类词缺少上下文。
+    var navigationTitle: String {
+        switch self {
+        case .all: return L10n.tr("全部应用")
+        case .thirdParty: return L10n.tr("第三方应用")
+        case .system: return L10n.tr("系统应用")
+        case .appStore: return "App Store"
+        case .homebrew: return L10n.tr("Homebrew 安装")
+        }
+    }
+
     /// 判断应用是否符合筛选条件
     func matches(_ app: InstalledApp) -> Bool {
         switch self {

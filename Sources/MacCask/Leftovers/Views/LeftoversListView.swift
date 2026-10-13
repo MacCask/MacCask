@@ -3,6 +3,7 @@ import SwiftUI
 /// 残留文件内容列：多选列表
 struct LeftoversListView: View {
     @Bindable var model: LeftoversViewModel
+    var showsSelectionBar = true
     @State private var pendingTrash: Set<LeftoverGroup.ID> = []
 
     var body: some View {
@@ -12,7 +13,16 @@ struct LeftoversListView: View {
             } else {
                 List(selection: $model.selection) {
                     ForEach(model.visibleGroups) { group in
-                        LeftoverRow(group: group).tag(group.id)
+                        HStack(spacing: 10) {
+                            Toggle("", isOn: Binding(get: { model.selection.contains(group.id) }, set: { selected in
+                                if selected { model.selection.insert(group.id) } else { model.selection.remove(group.id) }
+                            }))
+                            .toggleStyle(.checkbox).labelsHidden()
+                            .accessibilityLabel(L10n.tr("选择 {0}", group.displayName))
+                            .disabled(model.isTrashing)
+                            LeftoverRow(group: group)
+                        }
+                        .tag(group.id)
                     }
                 }
                 .contextMenu(forSelectionType: LeftoverGroup.ID.self) { ids in
@@ -25,16 +35,18 @@ struct LeftoversListView: View {
                     }
                 }
                 .safeAreaInset(edge: .top, spacing: 0) {
-                    if !model.hasFullDiskAccess { FullDiskAccessBanner() }
+                    VStack(spacing: 0) {
+                        LeftoversListHeader(model: model)
+                        if !model.hasFullDiskAccess { FullDiskAccessBanner() }
+                    }
                 }
                 .safeAreaInset(edge: .bottom, spacing: 0) {
-                    ListStatusBar(text: L10n.tr("{0} 项残留 · 共 {1}", "\(model.visibleGroups.count)", "\(ByteFormatter.string(model.visibleTotalSize))"))
+                    if showsSelectionBar { LeftoversSelectionBar(model: model) { requestTrash(model.selection) } }
                 }
             }
         }
         .navigationTitle(L10n.tr("残留文件"))
         .searchable(text: $model.searchText, prompt: L10n.tr("搜索标识符"))
-        .toolbar { toolbar }
         .confirmationDialog(trashTitle, isPresented: Binding(get: { !pendingTrash.isEmpty }, set: { if !$0 { pendingTrash = [] } })) {
             Button(L10n.tr("移到废纸篓"), role: .destructive) { model.moveToTrash(pendingTrash) }
             Button(L10n.tr("取消"), role: .cancel) {}
@@ -51,9 +63,7 @@ struct LeftoversListView: View {
 
     /// 删除确认标题
     private var trashTitle: String {
-        let targets = model.groups.filter { pendingTrash.contains($0.id) }
-        let size = targets.reduce(0) { $0 + $1.totalSize }
-        return L10n.tr("将 {0} 项残留（{1}）移到废纸篓？", "\(targets.count)", "\(ByteFormatter.string(size))")
+        model.trashConfirmationTitle(for: pendingTrash)
     }
 
     /// 请求删除（弹出确认）
@@ -79,35 +89,7 @@ struct LeftoversListView: View {
         }
     }
 
-    /// 工具栏：筛选、移到废纸篓、刷新
-    @ToolbarContentBuilder
-    private var toolbar: some ToolbarContent {
-        ToolbarItemGroup {
-            Menu {
-                Toggle(L10n.tr("显示低可信度项"), isOn: $model.showLowConfidence)
-                Toggle(L10n.tr("显示已忽略项"), isOn: $model.showIgnored)
-            } label: {
-                Label(L10n.tr("筛选"), systemImage: "line.3.horizontal.decrease.circle")
-            }
-            .help(L10n.tr("筛选"))
 
-            Button {
-                requestTrash(model.selection)
-            } label: {
-                Label(L10n.tr("移到废纸篓"), systemImage: "trash")
-            }
-            .disabled(model.selection.isEmpty || model.isTrashing)
-            .help(L10n.tr("将选中的残留移到废纸篓"))
-
-            Button {
-                Task { await model.refresh() }
-            } label: {
-                Label(L10n.tr("重新扫描"), systemImage: "arrow.clockwise")
-            }
-            .disabled(model.isScanning)
-            .help(L10n.tr("重新扫描残留文件"))
-        }
-    }
 }
 
 /// 残留分组行

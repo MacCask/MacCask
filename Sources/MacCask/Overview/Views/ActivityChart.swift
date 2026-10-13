@@ -11,7 +11,7 @@ struct ActivityChart: View {
         DashboardCard(title: L10n.tr("使用活跃度"), subtitle: L10n.tr("第三方应用按上次使用时间分组")) {
             if let stale = buckets.first(where: { $0.isStale && $0.count > 0 }), model.appSizesReady {
                 VStack(alignment: .trailing, spacing: 0) {
-                    Text(ByteFormatter.string(stale.bytes))
+                    Text(ByteFormatter.measured(stale.bytes, isComplete: stale.isComplete))
                         .font(.title3.weight(.semibold).monospacedDigit())
                     Text(L10n.tr("超过一年未使用")).font(.caption).foregroundStyle(.secondary)
                 }
@@ -68,7 +68,7 @@ struct ActivityChart: View {
     private func tooltip(_ bucket: ActivityBucket) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(bucket.title).font(.caption.weight(.semibold))
-            Text(L10n.tr("{0} 个应用 · {1}", "\(bucket.count)", "\(ByteFormatter.string(bucket.bytes))"))
+            Text(L10n.tr("{0} 个应用 · {1}", "\(bucket.count)", "\(ByteFormatter.measured(bucket.bytes, isComplete: bucket.isComplete))"))
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.secondary)
         }

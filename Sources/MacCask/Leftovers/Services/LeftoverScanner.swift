@@ -64,7 +64,7 @@ enum LeftoverScanner {
 
     /// 扫描 Library 目录中的残留文件（后台执行）
     static func scan(index: InstalledIdentifierIndex) async -> [LeftoverGroup] {
-        await Task.detached(priority: .userInitiated) {
+        await Task.detached(priority: .utility) {
             var groups: [String: LeftoverGroup] = [:]
             var order: [String] = []
             for location in LibraryLocations.all() {

@@ -173,6 +173,14 @@ Quit a running application before uninstalling it. Leftover detection uses ident
 
 ![Applications and related files](docs/screenshots/applications.png)
 
+### Homebrew packages
+
+![Homebrew packages](docs/screenshots/homebrew.png)
+
+### Startup items
+
+![Startup items](docs/screenshots/startup-items.png)
+
 ### Leftover review
 
 ![Leftover review](docs/screenshots/leftovers.png)
