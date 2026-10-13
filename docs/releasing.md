@@ -45,24 +45,24 @@ Both `v1.0.0` and `1.0.0` are accepted for `VERSION=1.0.0`; mismatched tags fail
 
 The published release contains:
 
-- `MacCask-1.0.0-macos-x86_64.zip` — Intel Macs.
-- `MacCask-1.0.0-macos-arm64.zip` — Apple Silicon Macs.
-- `SHA256SUMS` — checksums for both archives.
+- `MacCask-1.0.0-macos-x86_64.dmg` — Intel Macs.
+- `MacCask-1.0.0-macos-arm64.dmg` — Apple Silicon Macs.
+- `SHA256SUMS` — checksums for both disk images.
 
-Each ZIP contains `MacCask.app`. The pipeline verifies the app's version, signature, and exact architecture before archiving. A new release remains a draft until all attachments have uploaded. Re-running a successful tag workflow can replace same-named attachments on the existing release.
+Each DMG contains `MacCask.app` and an `Applications` shortcut. Open the DMG and drag the app to Applications. The pipeline verifies the app's version, signature, and exact architecture before archiving. A new release remains a draft until all attachments have uploaded. Re-running a successful tag workflow can replace same-named attachments on the existing release.
 
-## Build an archive locally
+## Build a DMG locally
 
 ```sh
 make release ARCH=x86_64
 make release ARCH=arm64
 ```
 
-Archives are written to `build/releases/`; the app bundle remains at `build/MacCask.app`. The last build replaces that bundle, so choose your Mac's architecture for the last build if you want to run it locally. CI uses separate Apple Silicon runners for the two target architectures, with the full tests in the native arm64 job. Intel GitHub virtual machines cannot reliably run the graphics tests.
+DMG files are written to `build/releases/`; the app bundle remains at `build/MacCask.app`. The last build replaces that bundle, so choose your Mac's architecture for the last build if you want to run it locally. CI uses separate Apple Silicon runners for the two target architectures, with the full tests in the native arm64 job. Intel GitHub virtual machines cannot reliably run the graphics tests.
 
 ## Validation
 
-Push `ci/release-validation` to test the full workflow without creating a Release. Once the workflow is on the default branch, you can also use **Actions → Build and release → Run workflow**. These runs build and sign both archives and upload them as Actions artifacts; only tag pushes publish a Release.
+Push `ci/release-validation` to test the full workflow without creating a Release. Once the workflow is on the default branch, you can also use **Actions → Build and release → Run workflow**. These runs build and sign both disk images and upload them as Actions artifacts; only tag pushes publish a Release.
 
 ```sh
 bash Tests/Release/test-version.sh

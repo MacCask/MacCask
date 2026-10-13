@@ -130,7 +130,7 @@ swift test
 | `swift test` | Run automated tests |
 | `make build` | Build icons and the release executable |
 | `make app` | Create and sign `build/MacCask.app` |
-| `make release ARCH=arm64` | Build and archive the arm64 app under `build/releases/` (use `ARCH=x86_64` for Intel) |
+| `make release ARCH=arm64` | Build an arm64 DMG installer under `build/releases/` (use `ARCH=x86_64` for Intel) |
 | `make run` | Package and launch the app |
 | `make install` | Package and install to `/Applications` |
 | `make clean` | Delete generated `build/` and `.build/` directories |
@@ -200,7 +200,7 @@ For code changes, follow the [development guidelines](agents.md), run `swift tes
 
 Architecture details are in the [design document](docs/design.md).
 
-Maintainers can configure [tag-based releases and signing secrets](docs/releasing.md). A matching version tag publishes separate Intel and Apple Silicon archives after both builds succeed.
+Maintainers can configure [tag-based releases and signing secrets](docs/releasing.md). A matching version tag publishes separate Intel and Apple Silicon DMG installers after both builds succeed.
 
 ## License
 

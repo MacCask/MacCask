@@ -130,7 +130,7 @@ swift test
 | `swift test` | 运行自动化测试 |
 | `make build` | 生成图标并编译 Release 程序 |
 | `make app` | 创建并签名 `build/MacCask.app` |
-| `make release ARCH=arm64` | 构建 arm64 应用并归档到 `build/releases/`；Intel 使用 `ARCH=x86_64` |
+| `make release ARCH=arm64` | 构建 arm64 DMG 安装包到 `build/releases/`；Intel 使用 `ARCH=x86_64` |
 | `make run` | 打包并启动应用 |
 | `make install` | 打包并安装到 `/Applications` |
 | `make clean` | 删除生成的 `build/` 和 `.build/` 目录 |
@@ -200,7 +200,7 @@ swift test
 
 架构细节见[设计文档](design.md)。
 
-维护者可按[发布配置说明](releasing.zh-CN.md)设置签名 Secrets。推送匹配版本的 tag 后，两个架构都构建成功才会发布 Intel 与 Apple Silicon 的独立压缩包。
+维护者可按[发布配置说明](releasing.zh-CN.md)设置签名 Secrets。推送匹配版本的 tag 后，两个架构都构建成功才会发布 Intel 与 Apple Silicon 的独立 DMG 安装包。
 
 ## 许可证
 

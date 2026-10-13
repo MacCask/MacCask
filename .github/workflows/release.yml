@@ -98,7 +98,7 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: maccask-${{ matrix.arch }}
-          path: build/releases/MacCask-${{ needs.prepare.outputs.version }}-macos-${{ matrix.arch }}.zip
+          path: build/releases/MacCask-${{ needs.prepare.outputs.version }}-macos-${{ matrix.arch }}.dmg
           if-no-files-found: error
           retention-days: 7
       - name: Remove signing material
@@ -135,8 +135,8 @@ jobs:
         run: |
           set -euo pipefail
           cd release-assets
-          intel="MacCask-$RELEASE_VERSION-macos-x86_64.zip"
-          arm="MacCask-$RELEASE_VERSION-macos-arm64.zip"
+          intel="MacCask-$RELEASE_VERSION-macos-x86_64.dmg"
+          arm="MacCask-$RELEASE_VERSION-macos-arm64.dmg"
           test -s "$intel"
           test -s "$arm"
           sha256sum "$intel" "$arm" > SHA256SUMS
@@ -150,13 +150,13 @@ jobs:
           - **Intel:** \`$intel\`
           - **Apple Silicon:** \`$arm\`
 
-          Extract the ZIP and copy MacCask.app to Applications.
+          Open the DMG and drag MacCask.app to the Applications shortcut.
 
           **Signing:** Self-signed; not notarized by Apple. macOS may show a security warning on first launch.
 
           SHA-256 checksums are included in \`SHA256SUMS\`.
           EOF
-          # 首次创建为草稿，两份压缩包和校验和上传成功后才公开；重跑可替换同名附件。
+          # 首次创建为草稿，两份磁盘映像和校验和上传成功后才公开；重跑可替换同名附件。
           if ! gh release view "$RELEASE_TAG" > /dev/null 2>&1; then
             gh release create "$RELEASE_TAG" --verify-tag --draft \
               --title "MacCask $RELEASE_VERSION" --notes-file "$notes"
