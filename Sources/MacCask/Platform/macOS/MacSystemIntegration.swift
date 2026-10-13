@@ -2,6 +2,15 @@ import AppKit
 
 /// macOS 系统集成实现：访达、系统设置、权限检测、运行中应用
 struct MacSystemIntegration: SystemIntegrating {
+    /// 应用级设置同时覆盖主窗口、设置及更新窗口；nil 表示跟随系统。
+    @MainActor func applyAppearance(_ appearance: AppAppearance) {
+        switch appearance {
+        case .system: NSApp.appearance = nil
+        case .light: NSApp.appearance = NSAppearance(named: .aqua)
+        case .dark: NSApp.appearance = NSAppearance(named: .darkAqua)
+        }
+    }
+
     /// 打开菜单栏入口时激活进程，并恢复最小化的主窗口。
     @MainActor func activateApplication() {
         NSApp.activate(ignoringOtherApps: true)

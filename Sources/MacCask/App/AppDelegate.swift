@@ -5,6 +5,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// 启动完成后设为普通前台应用并激活窗口
     /// 通过 `swift run` 直接运行裸可执行文件时没有 Info.plist，系统会把进程当作后台程序（无 Dock 图标、窗口不前置）
     func applicationDidFinishLaunching(_ notification: Notification) {
+        Platform.current.system.applyAppearance(AppAppearance.resolve(
+            UserDefaults.standard.string(forKey: AppAppearance.preferenceKey)))
         NSApp.setActivationPolicy(.regular)
         // 裸可执行文件使用 SwiftPM 资源；正式 .app 保留系统动态外观。
         if Bundle.main.bundleURL.pathExtension != "app",

@@ -25,6 +25,7 @@ private struct AppDetailContent: View {
             VStack(alignment: .leading, spacing: 20) {
                 header
                 stats
+                if app.isAppStore { AppStoreVersionView(app: app).id(app.id) }
                 if !model.isAnalysisComplete { incompleteNotice }
                 filesSection
             }

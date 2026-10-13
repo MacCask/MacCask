@@ -50,6 +50,8 @@ def prepare_sources(destination):
             text = replace_required(text, "var isBrewAvailable: Bool { service.isAvailable }", "var isBrewAvailable: Bool { true }")
         if path.name == "AppState.swift":
             text = replace_required(text, "InstalledAppsViewModel()", "InstalledAppsViewModel(useSizeCache: false)")
+        if path.name == "AppearanceToggle.swift":
+            text = replace_required(text, "@AppStorage(AppAppearance.preferenceKey)", "@State")
         if path.name == "SidebarView.swift":
             text = replace_required(text, '@AppStorage("appsNavigationExpanded")', '@State')
         if path.name == "LaunchItemsListView.swift":

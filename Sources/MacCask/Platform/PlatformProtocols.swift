@@ -91,6 +91,9 @@ struct DiskUsage: Sendable {
 
 /// 系统集成接口（访达、系统设置、权限检测等）
 protocol SystemIntegrating: Sendable {
+    /// 同步整个应用的外观，系统模式继续响应系统外观变化。
+    @MainActor func applyAppearance(_ appearance: AppAppearance)
+
     /// 激活应用并恢复最小化窗口，供菜单栏入口调用。
     @MainActor func activateApplication()
     /// 正常退出应用，交由系统完成窗口和进程清理。

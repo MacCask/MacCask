@@ -5,6 +5,8 @@ import functools
 import http.server
 import os
 import pathlib
+import platform
+import re
 import plistlib
 import shutil
 import subprocess
@@ -24,7 +26,14 @@ def main():
     """构建两个隔离版本，签名清单后验证提醒、下载、安装及重启。"""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--scenario", choices=["install", "cancel"], default="install")
-    scenario = parser.parse_args().scenario
+    parser.add_argument("--online-version", help="使用 GitHub 最新清单，只检查并取消，不安装正式应用")
+    arguments = parser.parse_args()
+    scenario = arguments.scenario
+    online_version = arguments.online_version
+    if online_version and (scenario != "cancel" or not re.fullmatch(r"\d+\.\d+\.\d+", online_version)):
+        parser.error("线上检查必须指定 --scenario cancel 及数字版本号")
+    old_version = "0.0.0" if online_version else "9000.0.0"
+    expected_version = online_version or "9000.0.1"
     work = ROOT / "build" / ("update-integration-" + uuid.uuid4().hex[:8])
     work.mkdir(parents=True)
     identity = os.environ.get("SIGN_IDENTITY", "Flick Self-Signed Code Signing")
@@ -55,11 +64,11 @@ def main():
     binary = work / "UpdateTest"
     run(["swiftc", "-parse-as-library", "-swift-version", "5", "-F", str(framework), "-framework", "Sparkle", "-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks", str(work / "MacAppUpdater.swift"), str(work / "L10n.swift"), "Sources/MacCask/Platform/AppUpdating.swift", "Sources/MacCask/Updates/Views/UpdateNoticeView.swift", "Tests/Release/UpdateIntegrationHarness.swift", "-o", str(binary)])
     apps = []
-    for version, folder in [("9000.0.0", "installed"), ("9000.0.1", "new")]:
+    for version, folder in [(old_version, "installed"), ("9000.0.1", "new")]:
         app = work / folder / "MacCaskUpdateTest.app"
         (app / "Contents/MacOS").mkdir(parents=True)
         shutil.copy(binary, app / "Contents/MacOS/UpdateTest")
-        info = dict(CFBundleIdentifier=identifier, CFBundleName="MacCaskUpdateTest", CFBundleDisplayName="MacCask Update Test", CFBundleExecutable="UpdateTest", CFBundlePackageType="APPL", CFBundleVersion=version, CFBundleShortVersionString=version, LSMinimumSystemVersion="15.0", NSPrincipalClass="NSApplication", SUPublicEDKey=public_key, SUFeedURL=base+"appcast.xml", SURequireSignedFeed=True, SUVerifyUpdateBeforeExtraction=True, SUEnableAutomaticChecks=False, SUAutomaticallyUpdate=False, SUAllowsAutomaticUpdates=False, SUShowReleaseNotes=False, NSAppTransportSecurity={"NSAllowsLocalNetworking": True}, IntegrationTestRoot=str(work), IntegrationScenario=scenario)
+        info = dict(CFBundleIdentifier=identifier, CFBundleName="MacCaskUpdateTest", CFBundleDisplayName="MacCask Update Test", CFBundleExecutable="UpdateTest", CFBundlePackageType="APPL", CFBundleVersion=version, CFBundleShortVersionString=version, LSMinimumSystemVersion="15.0", NSPrincipalClass="NSApplication", SUPublicEDKey=public_key, SUFeedURL=(f"https://github.com/MacCask/MacCask/releases/latest/download/appcast-{platform.machine()}.xml" if online_version else base+"appcast.xml"), SURequireSignedFeed=True, SUVerifyUpdateBeforeExtraction=True, SUEnableAutomaticChecks=False, SUAutomaticallyUpdate=False, SUAllowsAutomaticUpdates=False, SUShowReleaseNotes=False, NSAppTransportSecurity={"NSAllowsLocalNetworking": True}, IntegrationTestRoot=str(work), IntegrationScenario=scenario, IntegrationExpectedVersion=expected_version)
         (app / "Contents/Info.plist").write_bytes(plistlib.dumps(info))
         run(["bash", "Scripts/Release/embed-sparkle.sh", str(app), identity], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         run(["codesign", "--force", "--timestamp=none", "--sign", identity, str(app)])
@@ -80,9 +89,9 @@ def main():
                 assert background_checked
                 assert not any(path.endswith(".dmg") for _, path in requests), "稍后提醒仍触发了下载"
                 installed = plistlib.loads((apps[0] / "Contents/Info.plist").read_bytes())
-                assert installed["CFBundleVersion"] == "9000.0.0"
+                assert installed["CFBundleVersion"] == old_version
                 assert not (work / "relaunched").exists()
-                print("PASS: remind later clears notice without downloading or replacing app")
+                print("PASS: " + ("GitHub " + online_version + " detected by Sparkle; " if online_version else "") + "remind later clears notice without replacing app")
                 print("Evidence:", work)
                 return
             if (work / "relaunched").exists():

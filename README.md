@@ -12,10 +12,11 @@ A native macOS application manager built with SwiftUI. Inspect installed apps an
 
 - **Overview:** disk usage, largest apps, app sources, usage activity, and cleanup suggestions.
 - **Applications:** search, filter, and sort installed apps; inspect versions, sizes, and related Library files; select files to remove. System apps are labeled and protected from uninstalling.
+- **App Store:** look up store versions for installed App Store apps and open their store pages to update; results use the system region and may lag behind the store.
 - **Homebrew:** manage Formula and Cask packages, filter dependencies and outdated packages, upgrade, uninstall, update metadata, and clean up old versions and caches. Commands display live output.
 - **Startup items:** inspect and enable or disable login items, user/global agents, and third-party system daemons.
 - **Leftovers:** review possible leftovers by identifier, location, size, and confidence; ignore entries or move selected files to the Trash.
-- **Native interface:** light/dark appearance, sidebar navigation, list-and-detail views, and an optional menu bar entry.
+- **Native interface:** appearance that follows the system by default, with a one-click light/dark toggle in the bottom-right corner of the sidebar that remembers your choice, sidebar navigation, list-and-detail views, and an optional menu bar entry.
 - **Languages:** English and Simplified Chinese, with a saved preference and system-language matching by default.
 
 ## App updates

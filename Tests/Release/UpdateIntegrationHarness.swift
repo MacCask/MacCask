@@ -71,7 +71,8 @@ final class HarnessDelegate: NSObject, NSApplicationDelegate {
             if updater.availableVersion != nil { break }
             try? await Task.sleep(for: .milliseconds(200))
         }
-        guard updater.availableVersion == "9000.0.1" else {
+        let expected = Bundle.main.object(forInfoDictionaryKey: "IntegrationExpectedVersion") as? String ?? "9000.0.1"
+        guard updater.availableVersion == expected else {
             record("FAIL no in-app notice"); NSApp.terminate(nil); return
         }
         let visible = NSApp.windows.filter { $0.isVisible && $0 !== window }

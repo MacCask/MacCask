@@ -112,3 +112,11 @@ python3 Tests/Release/run-update-integration.py --scenario cancel
 ```
 
 测试会短暂打开独立测试应用的 Sparkle 窗口，并在该进程内模拟用户操作。它复用正式更新服务和提示组件，使用本机回环服务器、临时 Bundle ID 和虚构版本；不会替换 Applications 中的应用。第一项实际下载、替换并重启到新版；第二项验证稍后提醒不下载或安装。日志保存在输出的 build/update-integration-* 目录。需要可用的 macOS 图形会话，不在无桌面的 CI 中运行。
+
+检查已发布的 GitHub 最新版本（只打开提示并取消，不安装）：
+
+```sh
+python3 Tests/Release/run-update-integration.py --scenario cancel --online-version 1.1.1
+```
+
+已确认发布的 1.1.0 不含更新器，需手动安装 1.1.1 完成首次接入。

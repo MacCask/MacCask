@@ -3,6 +3,7 @@ import SwiftUI
 /// 已安装应用内容列：应用列表
 struct InstalledAppsListView: View {
     @Bindable var model: InstalledAppsViewModel
+    private let storeUpdates = AppStoreUpdates.shared
 
     var body: some View {
         Group {
@@ -13,7 +14,8 @@ struct InstalledAppsListView: View {
                     ForEach(model.visibleApps) { app in
                         AppRowView(app: app, size: model.totalSizes[app.id]?.bytes,
                                    isSizeComplete: model.totalSizes[app.id]?.isComplete ?? false,
-                                   isUpdating: model.updatingAppIDs.contains(app.id)).tag(app.id)
+                                   isUpdating: model.updatingAppIDs.contains(app.id),
+                                   storeUpdateVersion: storeUpdates.update(for: app)?.version).tag(app.id)
                     }
                 }
                 .overlay {
@@ -30,6 +32,7 @@ struct InstalledAppsListView: View {
         .navigationTitle(L10n.tr("应用程序"))
         .searchable(text: $model.searchText, prompt: L10n.tr("搜索名称或 Bundle ID"))
         .task { await model.loadIfNeeded() }
+        .task(id: model.apps) { await storeUpdates.refresh(model.apps) }
     }
 
 }
@@ -40,6 +43,7 @@ struct AppRowView: View {
     let size: Int64?
     var isSizeComplete = true
     var isUpdating = false
+    var storeUpdateVersion: String?
 
     var body: some View {
         HStack(spacing: 10) {
@@ -47,7 +51,13 @@ struct AppRowView: View {
                 .resizable()
                 .frame(width: 32, height: 32)
             VStack(alignment: .leading, spacing: 3) {
-                Text(app.name).fontWeight(.medium).lineLimit(1)
+                HStack(spacing: 6) {
+                    Text(app.name).fontWeight(.medium).lineLimit(1)
+                    if let storeUpdateVersion {
+                        TagBadge(text: L10n.tr("可更新"), style: .outdated, symbol: "arrow.up")
+                            .help(L10n.tr("商店版本 {0}", storeUpdateVersion))
+                    }
+                }
                 HStack(spacing: 4) {
                     AppTags(app: app)
                     if let version = app.version {
