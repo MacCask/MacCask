@@ -165,21 +165,21 @@ final class InstalledAppsViewModel {
     func uninstallSelected() {
         guard let app = selectedApp, !app.isSystem else { return }
         if let bundleID = app.bundleID, Platform.current.system.isApplicationRunning(bundleID: bundleID) {
-            alertMessage = "「\(app.name)」正在运行，请先退出后再卸载。"
+            alertMessage = L10n.tr("「{0}」正在运行，请先退出后再卸载。", "\(app.name)")
             return
         }
         let files = relatedFiles.filter { checkedFiles.contains($0.id) }
         guard !files.isEmpty else { return }
 
         // Homebrew 安装的应用显示命令日志
-        let session = app.isHomebrew ? CommandSession(title: "卸载 \(app.name)") : nil
+        let session = app.isHomebrew ? CommandSession(title: L10n.tr("卸载 {0}", "\(app.name)")) : nil
         activeSession = session
         Task {
             let outcome = await AppUninstaller.uninstall(app, files: files, output: session?.outputHandler() ?? { @Sendable _ in })
             session?.finish(succeeded: outcome.succeeded)
             if session == nil, !outcome.succeeded {
                 let failed = outcome.failures.keys.map(\.path).sorted().joined(separator: "\n")
-                alertMessage = outcome.errorMessage ?? "以下文件未能移到废纸篓：\n\(failed)"
+                alertMessage = outcome.errorMessage ?? L10n.tr("以下文件未能移到废纸篓：\n{0}", "\(failed)")
             }
             // 应用包已删除则从列表移除，否则重新分析剩余文件
             if !FileManager.default.fileExists(atPath: app.url.path) {

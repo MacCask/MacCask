@@ -10,13 +10,13 @@ struct LeftoverDetailView: View {
             groupDetail(group)
         } else if selected.count > 1 {
             ContentUnavailableView {
-                Label("已选择 \(selected.count) 项", systemImage: "square.stack.3d.up")
+                Label(L10n.tr("已选择 {0} 项", "\(selected.count)"), systemImage: "square.stack.3d.up")
             } description: {
-                Text("合计 \(ByteFormatter.string(selected.reduce(0) { $0 + $1.totalSize }))，共 \(selected.reduce(0) { $0 + $1.files.count }) 个文件")
+                Text(L10n.tr("合计 {0}，共 {1} 个文件", "\(ByteFormatter.string(selected.reduce(0) { $0 + $1.totalSize }))", "\(selected.reduce(0) { $0 + $1.files.count })"))
             }
         } else {
-            ContentUnavailableView("选择残留项", systemImage: "archivebox",
-                                   description: Text("按住 ⌘ 或 ⇧ 可多选，右键可忽略或删除"))
+            ContentUnavailableView(L10n.tr("选择残留项"), systemImage: "archivebox",
+                                   description: Text(L10n.tr("按住 ⌘ 或 ⇧ 可多选，右键可忽略或删除")))
         }
     }
 
@@ -38,14 +38,14 @@ struct LeftoverDetailView: View {
                 }
 
                 HStack(spacing: 12) {
-                    StatCard(title: "占用空间", value: ByteFormatter.string(group.totalSize), symbol: "internaldrive", tint: .orange)
-                    StatCard(title: "文件位置", value: "\(group.files.count) 处", symbol: "folder")
-                    StatCard(title: "可信度", value: group.confidence == .high ? "高" : "低", symbol: "checkmark.shield",
+                    StatCard(title: L10n.tr("占用空间"), value: ByteFormatter.string(group.totalSize), symbol: "internaldrive", tint: .orange)
+                    StatCard(title: L10n.tr("文件位置"), value: L10n.tr("{0} 处", "\(group.files.count)"), symbol: "folder")
+                    StatCard(title: L10n.tr("可信度"), value: group.confidence == .high ? L10n.tr("高") : L10n.tr("低"), symbol: "checkmark.shield",
                              tint: group.confidence == .high ? .green : .yellow)
                 }
 
                 if group.confidence == .low {
-                    Label("同一开发商（\(IdentifierMatcher.vendor(of: group.identifier))）仍有应用安装，这些文件可能被共享使用，删除前请确认。",
+                    Label(L10n.tr("同一开发商（{0}）仍有应用安装，这些文件可能被共享使用，删除前请确认。", "\(IdentifierMatcher.vendor(of: group.identifier))"),
                           systemImage: "exclamationmark.triangle")
                         .font(.callout)
                         .foregroundStyle(.secondary)

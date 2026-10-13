@@ -1,0 +1,2 @@
+/* 系统授权弹窗按 macOS 选择的应用语言显示。 */
+"NSAppleEventsUsageDescription" = "MacCask uses System Events to read and manage login items.";

@@ -7,12 +7,12 @@ struct InsightsCard: View {
 
     var body: some View {
         let insights = model.insights
-        DashboardCard(title: "建议", subtitle: insights.isEmpty ? nil : "\(insights.count) 条可优化项") {
+        DashboardCard(title: L10n.tr("建议"), subtitle: insights.isEmpty ? nil : L10n.tr("{0} 条可优化项", "\(insights.count)")) {
             if insights.isEmpty {
                 VStack(spacing: 8) {
                     Image(systemName: "checkmark.seal.fill").font(.largeTitle).foregroundStyle(ChartPalette.good)
-                    Text("一切良好").font(.callout.weight(.medium))
-                    Text("暂时没有需要处理的事项").font(.caption).foregroundStyle(.secondary)
+                    Text(L10n.tr("一切良好")).font(.callout.weight(.medium))
+                    Text(L10n.tr("暂时没有需要处理的事项")).font(.caption).foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, minHeight: 180)
             } else {

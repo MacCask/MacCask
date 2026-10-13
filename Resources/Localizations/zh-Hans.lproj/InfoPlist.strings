@@ -1,0 +1,2 @@
+/* 系统授权弹窗按 macOS 选择的应用语言显示。 */
+"NSAppleEventsUsageDescription" = "MacCask 需要通过“系统事件”读取和管理登录项。";

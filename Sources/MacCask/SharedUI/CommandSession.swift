@@ -28,7 +28,7 @@ final class CommandSession: Identifiable {
     func finish(succeeded: Bool) {
         self.succeeded = succeeded
         isRunning = false
-        append(succeeded ? "\n✅ 完成\n" : "\n❌ 执行失败\n")
+        append(succeeded ? L10n.tr("\n✅ 完成\n") : L10n.tr("\n❌ 执行失败\n"))
     }
 
     /// 生成一个可在后台线程调用的日志回调

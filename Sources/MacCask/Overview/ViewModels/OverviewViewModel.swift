@@ -92,10 +92,10 @@ final class OverviewViewModel {
         let system = all.filter(\.isSystem).count
         let other = all.count - homebrew - appStore - system
         return [
-            AppSourceSlice(title: "第三方", count: other, color: ChartPalette.blue),
+            AppSourceSlice(title: L10n.tr("第三方"), count: other, color: ChartPalette.blue),
             AppSourceSlice(title: "Homebrew", count: homebrew, color: ChartPalette.orange),
             AppSourceSlice(title: "App Store", count: appStore, color: ChartPalette.aqua),
-            AppSourceSlice(title: "系统", count: system, color: ChartPalette.neutral)
+            AppSourceSlice(title: L10n.tr("系统"), count: system, color: ChartPalette.neutral)
         ].filter { $0.count > 0 }
     }
 
@@ -117,11 +117,11 @@ final class OverviewViewModel {
             : nil
         let known = [thirdPartyAppBytes, homebrewBytes, cacheBytes, leftoverBytes].compactMap { $0 }.reduce(0, +)
         return [
-            DiskSegment(id: "apps", title: "第三方应用", bytes: thirdPartyAppBytes, color: ChartPalette.blue, section: .apps),
+            DiskSegment(id: "apps", title: L10n.tr("第三方应用"), bytes: thirdPartyAppBytes, color: ChartPalette.blue, section: .apps),
             DiskSegment(id: "brew", title: "Homebrew", bytes: homebrewBytes, color: ChartPalette.orange, section: .homebrew),
-            DiskSegment(id: "cache", title: "用户缓存", bytes: cacheBytes, color: ChartPalette.aqua),
-            DiskSegment(id: "leftovers", title: "残留文件", bytes: leftoverBytes, color: ChartPalette.yellow, section: .leftovers),
-            DiskSegment(id: "other", title: "其他已用", bytes: max(disk.usedBytes - known, 0), color: ChartPalette.neutral)
+            DiskSegment(id: "cache", title: L10n.tr("用户缓存"), bytes: cacheBytes, color: ChartPalette.aqua),
+            DiskSegment(id: "leftovers", title: L10n.tr("残留文件"), bytes: leftoverBytes, color: ChartPalette.yellow, section: .leftovers),
+            DiskSegment(id: "other", title: L10n.tr("其他已用"), bytes: max(disk.usedBytes - known, 0), color: ChartPalette.neutral)
         ]
     }
 
@@ -148,33 +148,33 @@ final class OverviewViewModel {
         if let disk {
             let free = 1 - disk.usedFraction
             if free < 0.1 {
-                result.append(Insight(level: .critical, title: "磁盘空间不足",
-                                      detail: "仅剩 \(ByteFormatter.string(disk.availableBytes))（\(percent(free))），建议清理残留与长期未用的应用",
+                result.append(Insight(level: .critical, title: L10n.tr("磁盘空间不足"),
+                                      detail: L10n.tr("仅剩 {0}（{1}），建议清理残留与长期未用的应用", "\(ByteFormatter.string(disk.availableBytes))", "\(percent(free))"),
                                       section: .leftovers))
             } else if free < 0.2 {
-                result.append(Insight(level: .warning, title: "磁盘空间偏紧",
-                                      detail: "剩余 \(ByteFormatter.string(disk.availableBytes))（\(percent(free))）",
+                result.append(Insight(level: .warning, title: L10n.tr("磁盘空间偏紧"),
+                                      detail: L10n.tr("剩余 {0}（{1}）", "\(ByteFormatter.string(disk.availableBytes))", "\(percent(free))"),
                                       section: .leftovers))
             }
         }
         if homebrew.outdatedCount > 0 {
-            result.append(Insight(level: .warning, title: "\(homebrew.outdatedCount) 个 Homebrew 包可更新",
-                                  detail: "及时更新可获得修复与安全补丁", section: .homebrew))
+            result.append(Insight(level: .warning, title: L10n.tr("{0} 个 Homebrew 包可更新", "\(homebrew.outdatedCount)"),
+                                  detail: L10n.tr("及时更新可获得修复与安全补丁"), section: .homebrew))
         }
         let leftoverCount = leftovers.activeCount
         if leftoverCount > 0 {
-            result.append(Insight(level: .info, title: "发现 \(leftoverCount) 项残留文件",
-                                  detail: "已卸载应用留下的数据，共 \(ByteFormatter.string(leftoverActiveBytes)) 可清理",
+            result.append(Insight(level: .info, title: L10n.tr("发现 {0} 项残留文件", "\(leftoverCount)"),
+                                  detail: L10n.tr("已卸载应用留下的数据，共 {0} 可清理", "\(ByteFormatter.string(leftoverActiveBytes))"),
                                   section: .leftovers))
         }
         if let stale = staleBucket {
-            result.append(Insight(level: .info, title: "\(stale.count) 个应用超过一年未使用",
-                                  detail: "共占用 \(ByteFormatter.string(stale.bytes))，可考虑卸载", section: .apps))
+            result.append(Insight(level: .info, title: L10n.tr("{0} 个应用超过一年未使用", "\(stale.count)"),
+                                  detail: L10n.tr("共占用 {0}，可考虑卸载", "\(ByteFormatter.string(stale.bytes))"), section: .apps))
         }
         let daemons = launchItems.items.filter { $0.source == .systemDaemon && $0.isEnabled }.count
         if daemons > 5 {
-            result.append(Insight(level: .info, title: "\(daemons) 个第三方守护进程已开启",
-                                  detail: "后台常驻进程过多会影响开机速度与续航", section: .launchItems))
+            result.append(Insight(level: .info, title: L10n.tr("{0} 个第三方守护进程已开启", "\(daemons)"),
+                                  detail: L10n.tr("后台常驻进程过多会影响开机速度与续航"), section: .launchItems))
         }
         let order: [InsightLevel] = [.critical, .warning, .info]
         return result.sorted { order.firstIndex(of: $0.level)! < order.firstIndex(of: $1.level)! }
@@ -182,6 +182,6 @@ final class OverviewViewModel {
 
     /// 百分比文本
     func percent(_ fraction: Double) -> String {
-        fraction.formatted(.percent.precision(.fractionLength(fraction < 0.01 && fraction > 0 ? 2 : 1)))
+        fraction.formatted(.percent.precision(.fractionLength(fraction < 0.01 && fraction > 0 ? 2 : 1)).locale(L10n.locale))
     }
 }

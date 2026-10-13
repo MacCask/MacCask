@@ -70,7 +70,7 @@ struct SidebarView: View {
         List(selection: Binding(get: { state.section }, set: { if let value = $0 { state.section = value } })) {
             Label(SidebarSection.overview.title, systemImage: SidebarSection.overview.symbol)
                 .tag(SidebarSection.overview)
-            Section("管理") {
+            Section(L10n.tr("管理")) {
                 ForEach(SidebarSection.allCases.filter { $0 != .overview }) { section in
                     Label(section.title, systemImage: section.symbol)
                         .badge(state.badge(for: section))
@@ -80,7 +80,7 @@ struct SidebarView: View {
         }
         .listStyle(.sidebar)
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            Label("文件均移到废纸篓，可恢复", systemImage: "arrow.uturn.backward.circle")
+            Label(L10n.tr("文件均移到废纸篓，可恢复"), systemImage: "arrow.uturn.backward.circle")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
                 .padding(10)

@@ -7,7 +7,7 @@ struct LaunchItemsListView: View {
     var body: some View {
         Group {
             if model.isLoading && model.items.isEmpty {
-                LoadingView(text: "正在读取启动项…")
+                LoadingView(text: L10n.tr("正在读取启动项…"))
             } else {
                 List(selection: $model.selection) {
                     if let error = model.loginItemError {
@@ -24,9 +24,9 @@ struct LaunchItemsListView: View {
                                 }
                             } header: {
                                 HStack {
-                                    Label(source.rawValue, systemImage: source.symbol)
+                                    Label(source.title, systemImage: source.symbol)
                                     Spacer()
-                                    Text("\(items.filter(\.isEnabled).count)/\(items.count) 已开启")
+                                    Text(L10n.tr("{0}/{1} 已开启", "\(items.filter(\.isEnabled).count)", "\(items.count)"))
                                         .monospacedDigit()
                                 }
                                 .help(source.subtitle)
@@ -36,33 +36,33 @@ struct LaunchItemsListView: View {
                 }
                 .overlay {
                     if model.items.isEmpty {
-                        ContentUnavailableView("没有第三方启动项", systemImage: "power")
+                        ContentUnavailableView(L10n.tr("没有第三方启动项"), systemImage: "power")
                     }
                 }
             }
         }
-        .navigationTitle("启动项")
-        .searchable(text: $model.searchText, prompt: "搜索启动项")
+        .navigationTitle(L10n.tr("启动项"))
+        .searchable(text: $model.searchText, prompt: L10n.tr("搜索启动项"))
         .toolbar {
             ToolbarItemGroup {
                 Button {
                     Platform.current.system.openLoginItemsSettings()
                 } label: {
-                    Label("系统登录项设置", systemImage: "gearshape")
+                    Label(L10n.tr("系统登录项设置"), systemImage: "gearshape")
                 }
-                .help("在系统设置中管理「允许在后台」的项目")
+                .help(L10n.tr("在系统设置中管理「允许在后台」的项目"))
 
                 Button {
                     Task { await model.refresh() }
                 } label: {
-                    Label("刷新", systemImage: "arrow.clockwise")
+                    Label(L10n.tr("刷新"), systemImage: "arrow.clockwise")
                 }
                 .disabled(model.isLoading)
-                .help("重新读取启动项")
+                .help(L10n.tr("重新读取启动项"))
             }
         }
-        .alert("操作失败", isPresented: Binding(get: { model.alertMessage != nil }, set: { if !$0 { model.alertMessage = nil } })) {
-            Button("好") {}
+        .alert(L10n.tr("操作失败"), isPresented: Binding(get: { model.alertMessage != nil }, set: { if !$0 { model.alertMessage = nil } })) {
+            Button(L10n.tr("好")) {}
         } message: {
             Text(model.alertMessage ?? "")
         }
@@ -82,7 +82,7 @@ struct LaunchItemRow: View {
                 HStack(spacing: 6) {
                     Text(item.displayName).fontWeight(.medium).lineLimit(1)
                     if item.isRunning {
-                        Circle().fill(.green).frame(width: 6, height: 6).help("运行中")
+                        Circle().fill(.green).frame(width: 6, height: 6).help(L10n.tr("运行中"))
                     }
                 }
                 if item.displayName != item.label {
@@ -99,7 +99,7 @@ struct LaunchItemRow: View {
                 .controlSize(.small)
                 .labelsHidden()
                 .disabled(model.togglingIDs.contains(item.id))
-                .help(item.source.requiresAdmin ? "需要管理员权限" : (item.isEnabled ? "关闭" : "开启"))
+                .help(item.source.requiresAdmin ? L10n.tr("需要管理员权限") : (item.isEnabled ? L10n.tr("关闭") : L10n.tr("开启")))
         }
         .padding(.vertical, 2)
         .contextMenu {

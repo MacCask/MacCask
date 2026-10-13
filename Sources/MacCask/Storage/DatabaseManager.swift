@@ -20,7 +20,7 @@ final class DatabaseManager {
             container = try ModelContainer(for: schema, configurations: config)
         } catch {
             // 数据库损坏或无法创建时退化为内存数据库，保证应用可用
-            NSLog("MacCask 数据库打开失败，改用内存数据库：\(error)")
+            NSLog("%@", L10n.tr("MacCask 数据库打开失败，改用内存数据库：{0}", "\(error)"))
             let memory = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
             container = try! ModelContainer(for: schema, configurations: memory)
         }
@@ -39,7 +39,7 @@ final class DatabaseManager {
         do {
             try context.save()
         } catch {
-            NSLog("MacCask 数据库保存失败：\(error)")
+            NSLog("%@", L10n.tr("MacCask 数据库保存失败：{0}", "\(error)"))
         }
     }
 }

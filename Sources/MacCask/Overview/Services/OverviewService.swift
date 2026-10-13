@@ -22,8 +22,8 @@ enum OverviewService {
         let day: TimeInterval = 86_400
         // 分组上限（天），nil 表示无上限；最后单独统计未知
         let ranges: [(String, Double?, Bool)] = [
-            ("7 天内", 7, false), ("30 天内", 30, false), ("半年内", 182, false),
-            ("一年内", 365, false), ("超过一年", nil, true)
+            (L10n.tr("7 天内"), 7, false), (L10n.tr("30 天内"), 30, false), (L10n.tr("半年内"), 182, false),
+            (L10n.tr("一年内"), 365, false), (L10n.tr("超过一年"), nil, true)
         ]
         var counts = Array(repeating: 0, count: ranges.count)
         var bytes = Array(repeating: Int64(0), count: ranges.count)
@@ -44,7 +44,7 @@ enum OverviewService {
             ActivityBucket(title: r.0, count: counts[i], bytes: bytes[i], isStale: r.2)
         }
         if unknownCount > 0 {
-            buckets.append(ActivityBucket(title: "未知", count: unknownCount, bytes: unknownBytes, isStale: false, isUnknown: true))
+            buckets.append(ActivityBucket(title: L10n.tr("未知"), count: unknownCount, bytes: unknownBytes, isStale: false, isUnknown: true))
         }
         return buckets
     }

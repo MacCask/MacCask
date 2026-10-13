@@ -5,12 +5,12 @@ struct MenuBarMenu: View {
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
-        Button("打开 MacCask") {
+        Button(L10n.tr("打开 MacCask")) {
             openWindow(id: "main")
             Platform.current.system.activateApplication()
         }
         Divider()
-        Button("退出 MacCask") {
+        Button(L10n.tr("退出 MacCask")) {
             Platform.current.system.terminateApplication()
         }
         .keyboardShortcut("q")

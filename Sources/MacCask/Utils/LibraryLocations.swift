@@ -16,6 +16,8 @@ enum LibraryCategory: String, CaseIterable, Sendable {
     case launchDaemons = "守护进程"
     case privilegedHelpers = "特权助手"
     case application = "应用程序"
+    /// 分类展示名称与扫描逻辑的枚举标识分离。
+    var title: String { L10n.tr(rawValue) }
 
     /// 分类对应的 SF Symbol 图标
     var symbol: String {

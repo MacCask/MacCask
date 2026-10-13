@@ -8,14 +8,16 @@ enum LaunchItemSource: String, CaseIterable, Identifiable, Sendable {
     case systemDaemon = "系统守护进程"
 
     var id: String { rawValue }
+    /// 本地化来源名称，原始值仍用于启动项标识。
+    var title: String { L10n.tr(rawValue) }
 
     /// 来源说明
     var subtitle: String {
         switch self {
-        case .loginItem: return "登录时自动打开的应用"
-        case .userAgent: return "~/Library/LaunchAgents，仅对当前用户生效"
-        case .globalAgent: return "/Library/LaunchAgents，对所有用户生效"
-        case .systemDaemon: return "/Library/LaunchDaemons，以 root 身份在后台运行"
+        case .loginItem: return L10n.tr("登录时自动打开的应用")
+        case .userAgent: return L10n.tr("~/Library/LaunchAgents，仅对当前用户生效")
+        case .globalAgent: return L10n.tr("/Library/LaunchAgents，对所有用户生效")
+        case .systemDaemon: return L10n.tr("/Library/LaunchDaemons，以 root 身份在后台运行")
         }
     }
 

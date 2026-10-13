@@ -29,6 +29,7 @@ app: build
 	sed -e 's/__VERSION__/$(VERSION)/' -e 's/__BUILD__/$(BUILD)/' Resources/Info.plist > $(APP_BUNDLE)/Contents/Info.plist
 	cp $(ICON_DIR)/AppIcon.icns $(ICON_DIR)/Assets.car $(APP_BUNDLE)/Contents/Resources/
 	cp -R "$(BIN_PATH)/MacCask_MacCask.bundle" $(APP_BUNDLE)/Contents/Resources/
+	cp -R Resources/Localizations/*.lproj $(APP_BUNDLE)/Contents/Resources/
 	/usr/libexec/PlistBuddy -c "Merge $(ICON_DIR)/partial.plist" $(APP_BUNDLE)/Contents/Info.plist
 	@if [ -n "$(SIGN_IDENTITY)" ]; then \
 		echo "使用证书签名: $(SIGN_IDENTITY)"; \

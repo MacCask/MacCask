@@ -29,7 +29,7 @@ struct MacFileTrasher: FileTrashing {
         let result = await privilegedRunner.runAsAdministrator(commands.joined(separator: " ; "))
         // 逐个确认是否已移动成功
         for url in needPrivilege where FileManager.default.fileExists(atPath: url.path) {
-            failures[url] = result.succeeded ? "移动失败" : result.output.trimmingCharacters(in: .whitespacesAndNewlines)
+            failures[url] = result.succeeded ? L10n.tr("移动失败") : result.output.trimmingCharacters(in: .whitespacesAndNewlines)
         }
         return failures
     }

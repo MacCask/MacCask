@@ -3,7 +3,12 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>zh_CN</string>
+	<string>en</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>zh-Hans</string>
+	</array>
 	<key>CFBundleExecutable</key>
 	<string>MacCask</string>
 	<key>CFBundleIdentifier</key>
@@ -29,6 +34,6 @@
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>MacCask 需要通过“系统事件”读取和管理登录项。</string>
+	<string>MacCask uses System Events to read and manage login items.</string>
 </dict>
 </plist>

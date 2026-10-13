@@ -82,12 +82,12 @@ struct FullDiskAccessBanner: View {
                 .font(.title3)
                 .foregroundStyle(.yellow)
             VStack(alignment: .leading, spacing: 4) {
-                Text("未授予完全磁盘访问权限").font(.callout.weight(.semibold))
-                Text("部分目录（如沙盒容器）无法读取，结果可能不完整。授权后请重启 MacCask。")
+                Text(L10n.tr("未授予完全磁盘访问权限")).font(.callout.weight(.semibold))
+                Text(L10n.tr("部分目录（如沙盒容器）无法读取，结果可能不完整。授权后请重启 MacCask。"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-                Button("打开系统设置") { Platform.current.system.openFullDiskAccessSettings() }
+                Button(L10n.tr("打开系统设置")) { Platform.current.system.openFullDiskAccessSettings() }
                     .buttonStyle(.link)
                     .font(.caption)
             }
@@ -105,8 +105,8 @@ struct FileContextMenu: View {
     let urls: [URL]
 
     var body: some View {
-        Button("在访达中显示") { Platform.current.system.revealInFinder(urls) }
-        Button("拷贝路径") {
+        Button(L10n.tr("在访达中显示")) { Platform.current.system.revealInFinder(urls) }
+        Button(L10n.tr("拷贝路径")) {
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(urls.map(\.path).joined(separator: "\n"), forType: .string)
         }

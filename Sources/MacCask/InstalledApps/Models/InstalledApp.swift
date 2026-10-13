@@ -38,6 +38,8 @@ enum AppFilter: String, CaseIterable, Identifiable {
     case homebrew = "Homebrew"
 
     var id: String { rawValue }
+    /// 展示文本随语言变化，原始值继续作为稳定标识。
+    var title: String { L10n.tr(rawValue) }
 
     /// 判断应用是否符合筛选条件
     func matches(_ app: InstalledApp) -> Bool {
@@ -58,4 +60,6 @@ enum AppSortOrder: String, CaseIterable, Identifiable {
     case lastUsed = "上次使用"
 
     var id: String { rawValue }
+    /// 展示排序名称，避免语言切换改变选中值。
+    var title: String { L10n.tr(rawValue) }
 }

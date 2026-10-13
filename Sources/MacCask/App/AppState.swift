@@ -14,11 +14,11 @@ enum SidebarSection: String, CaseIterable, Identifiable, Hashable {
     /// 标题
     var title: String {
         switch self {
-        case .overview: return "概览"
-        case .apps: return "应用程序"
+        case .overview: return L10n.tr("概览")
+        case .apps: return L10n.tr("应用程序")
         case .homebrew: return "Homebrew"
-        case .launchItems: return "启动项"
-        case .leftovers: return "残留文件"
+        case .launchItems: return L10n.tr("启动项")
+        case .leftovers: return L10n.tr("残留文件")
         }
     }
 

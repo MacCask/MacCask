@@ -23,15 +23,15 @@ enum AppUninstaller {
         if let token = app.caskToken {
             let result = await BrewService.shared.uninstallCask(token: token, output: output)
             guard result.succeeded else {
-                return UninstallOutcome(failures: [:], errorMessage: "Homebrew 卸载失败，请查看日志")
+                return UninstallOutcome(failures: [:], errorMessage: L10n.tr("Homebrew 卸载失败，请查看日志"))
             }
             // brew 已移除应用包，剩余的关联文件继续移到废纸篓
             remaining.removeAll { $0 == app.url }
         }
-        output("移到废纸篓：\(remaining.count) 项\n")
+        output(L10n.tr("移到废纸篓：{0} 项\n", "\(remaining.count)"))
         let failures = await Platform.current.trasher.moveToTrash(remaining)
         for (url, reason) in failures {
-            output("失败：\(url.path)（\(reason)）\n")
+            output(L10n.tr("失败：{0}（{1}）\n", "\(url.path)", "\(reason)"))
         }
         return UninstallOutcome(failures: failures, errorMessage: nil)
     }

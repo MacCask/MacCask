@@ -11,6 +11,16 @@
 
 # 详细设计
 
+## 项目介绍与演示截图
+
+- 根目录 `README.md` 提供英文介绍，链接到 `docs/README.zh-CN.md`；两版包含功能、构建运行、权限、清理行为和项目结构说明。
+- README 按功能、环境要求、源码构建、开发、使用、截图、常见问题、项目结构、贡献和许可组织。构建部分覆盖 Xcode 选择、克隆仓库、打包产物、启动、安装、签名及版本参数；所有命令依据实际 Makefile 与 Package.swift，不宣称未提供的安装渠道。
+- 三张截图存放在 `docs/screenshots/`，分别展示英语概览、应用详情和残留文件。使用真实 SwiftUI 组件和模拟数据，展示 Visual Studio Code、Firefox、OBS Studio、VLC、HandBrake 等常见软件与公开图标资源，不读取本机安装信息。
+- `Scripts/Documentation/render-screenshots.py` 在临时工程中移除自动任务和应用选择扫描，使用内存数据库、虚构主目录、文档图标资源及专用 Swift 渲染入口。静态导航与勾选图标替代依赖窗口合成的原生控件，仪表盘和详情复用真实组件，通过 `ImageRenderer` 直接导出 PNG。默认固定英语，支持 `--language zh-Hans --output <目录>` 单独验证中文；不修改真实用户语言偏好。正式应用源码不注入演示逻辑，不读取真实应用列表或捕获桌面。
+- 隔离规则必须匹配现有源码，否则停止生成；演示截图在两版 README 中明确标注。
+- 项目使用根目录 `LICENSE` 中的 MIT 协议，两版 README 均提供链接；文档中的第三方图标保留原有权利并提供来源说明。
+- Visual Studio Code 的截图资源采用官方 macOS 应用图标（白色圆角底板），与应用列表中的图标语义一致；资源来源与具体变体记录在文档图标清单中。
+
 ## 1. 技术选型
 
 | 项目 | 选择 | 说明 |
@@ -162,6 +172,17 @@ macOS 没有「禁用登录项」的公开接口，关闭即从登录项中移�
 - 统一的标签组件（系统/App Store/Homebrew/可更新/低可信度），颜色语义一致。
 - 长耗时任务显示进度；命令类任务显示实时日志面板。
 - 支持浅色/深色模式（使用系统语义色）。
+
+### 6.1 语言与设置
+
+- 新增 `Localization/Models/AppLanguage.swift` 与 `Localization/Views/LanguageSettingsView.swift`，使用 macOS 标准 Settings 场景和 `⌘,`，不向业务页面增加语言按钮。
+- 默认偏好为 `system`，按 `Locale.preferredLanguages` 顺序匹配英语或简体中文；未匹配时回退到英语。显式偏好使用稳定值 `en` / `zh-Hans`，通过 `UserDefaults` 保存。
+- `Utils/L10n.swift` 统一翻译与插值，中文原文作为资源键，英语译文在 SwiftPM 资源 `App/Resources/English.json` 中。占位符采用 `{0}`、`{1}`，单次替换，不将动态应用名、路径或命令输出作为翻译键。
+- 应用入口观察语言偏好，立即重建展示视图并注入所选 locale；全局 `AppState` 保留，模块数据、选中项与执行中的命令不重新创建。菜单栏和设置界面同步更新。
+- 侧边栏、筛选、详情、仪表盘、弹窗、工具提示及应用生成的错误文案接入翻译；日期、容量与百分比使用所选 locale。应用名称、Bundle ID、路径、包描述和命令输出保留原文。
+- 枚举原始值与展示标题分开处理，`AppFilter`、`LaunchItemSource`、`LibraryCategory` 等既有标识不变，避免影响选择和持久化记录。
+- 应用包声明 `en` 与 `zh-Hans`，打包时复制两种语言的 `InfoPlist.strings`，供系统授权弹窗使用；系统授权界面的语言由 macOS 决定。
+- 仪表盘磁贴的说明与状态标签分行，允许较长的英文说明换行，保持各磁贴等高。
 
 ## 7. 打包
 

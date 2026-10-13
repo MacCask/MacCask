@@ -105,7 +105,7 @@ final class HomebrewViewModel {
 
     /// 升级单个包
     func upgrade(_ package: BrewPackage) {
-        perform(title: "升级 \(package.name)") { [service] output in
+        perform(title: L10n.tr("升级 {0}", "\(package.name)")) { [service] output in
             await service.upgrade([package], output: output)
         }
     }
@@ -114,28 +114,28 @@ final class HomebrewViewModel {
     func upgradeAll() {
         let targets = outdatedPackages.filter { !$0.isPinned }
         guard !targets.isEmpty else { return }
-        perform(title: "全部升级（\(targets.count) 个）") { [service] output in
+        perform(title: L10n.tr("全部升级（{0} 个）", "\(targets.count)")) { [service] output in
             await service.upgrade(targets, output: output)
         }
     }
 
     /// 卸载包
     func uninstall(_ package: BrewPackage, zap: Bool) {
-        perform(title: "卸载 \(package.name)") { [service] output in
+        perform(title: L10n.tr("卸载 {0}", "\(package.name)")) { [service] output in
             await service.uninstall(package, zap: zap, output: output)
         }
     }
 
     /// 更新 Homebrew 软件源
     func updateBrew() {
-        perform(title: "更新 Homebrew") { [service] output in
+        perform(title: L10n.tr("更新 Homebrew")) { [service] output in
             await service.update(output: output)
         }
     }
 
     /// 清理旧版本
     func cleanup() {
-        perform(title: "清理旧版本与缓存") { [service] output in
+        perform(title: L10n.tr("清理旧版本与缓存")) { [service] output in
             await service.cleanup(output: output)
         }
     }

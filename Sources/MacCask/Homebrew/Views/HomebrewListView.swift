@@ -8,22 +8,22 @@ struct HomebrewListView: View {
         Group {
             if !model.isBrewAvailable {
                 ContentUnavailableView {
-                    Label("未安装 Homebrew", systemImage: "mug")
+                    Label(L10n.tr("未安装 Homebrew"), systemImage: "mug")
                 } description: {
-                    Text("Homebrew 是 macOS 上最流行的包管理器。")
+                    Text(L10n.tr("Homebrew 是 macOS 上最流行的包管理器。"))
                 } actions: {
-                    Button("访问 brew.sh") { Platform.current.system.openURL(URL(string: "https://brew.sh")!) }
+                    Button(L10n.tr("访问 brew.sh")) { Platform.current.system.openURL(URL(string: "https://brew.sh")!) }
                 }
             } else if model.isLoading && model.packages.isEmpty {
-                LoadingView(text: "正在读取 Homebrew…")
+                LoadingView(text: L10n.tr("正在读取 Homebrew…"))
             } else if let error = model.errorMessage, model.packages.isEmpty {
-                ContentUnavailableView("读取失败", systemImage: "exclamationmark.triangle", description: Text(error))
+                ContentUnavailableView(L10n.tr("读取失败"), systemImage: "exclamationmark.triangle", description: Text(error))
             } else {
                 list
             }
         }
         .navigationTitle("Homebrew")
-        .searchable(text: $model.searchText, placement: .sidebar, prompt: "搜索包")
+        .searchable(text: $model.searchText, placement: .sidebar, prompt: L10n.tr("搜索包"))
         .toolbar { toolbar }
         .task { await model.loadIfNeeded() }
         .sheet(item: $model.activeSession) { session in
@@ -40,12 +40,12 @@ struct HomebrewListView: View {
         }
         .overlay {
             if model.visiblePackages.isEmpty {
-                ContentUnavailableView(model.onlyOutdated ? "全部是最新版本" : "没有匹配的包",
+                ContentUnavailableView(model.onlyOutdated ? L10n.tr("全部是最新版本") : L10n.tr("没有匹配的包"),
                                        systemImage: model.onlyOutdated ? "checkmark.seal" : "magnifyingglass")
             }
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            Picker("类型", selection: $model.kind) {
+            Picker(L10n.tr("类型"), selection: $model.kind) {
                 ForEach(BrewPackageKind.allCases) { kind in
                     Text("\(kind.rawValue)  \(model.count(of: kind))").tag(kind)
                 }
@@ -63,8 +63,8 @@ struct HomebrewListView: View {
     /// 底部状态栏文本
     private var statusText: String {
         let outdated = model.outdatedPackages.count
-        let base = "\(model.visiblePackages.count) 个\(model.kind.title)"
-        return outdated > 0 ? base + " · \(outdated) 个可更新" : base + " · 全部最新"
+        let base = L10n.tr("{0} 个{1}", "\(model.visiblePackages.count)", "\(model.kind.title)")
+        return outdated > 0 ? base + L10n.tr(" · {0} 个可更新", "\(outdated)") : base + L10n.tr(" · 全部最新")
     }
 
     /// 工具栏：筛选、全部升级、刷新与更多操作
@@ -72,40 +72,40 @@ struct HomebrewListView: View {
     private var toolbar: some ToolbarContent {
         ToolbarItemGroup {
             Menu {
-                Toggle("仅显示可更新", isOn: $model.onlyOutdated)
+                Toggle(L10n.tr("仅显示可更新"), isOn: $model.onlyOutdated)
                 if model.kind == .formula {
-                    Toggle("隐藏依赖项", isOn: $model.hideDependencies)
+                    Toggle(L10n.tr("隐藏依赖项"), isOn: $model.hideDependencies)
                 }
             } label: {
-                Label("筛选", systemImage: model.onlyOutdated || model.hideDependencies
+                Label(L10n.tr("筛选"), systemImage: model.onlyOutdated || model.hideDependencies
                       ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
             }
-            .help("筛选")
+            .help(L10n.tr("筛选"))
 
             if !model.outdatedPackages.isEmpty {
                 Button {
                     model.upgradeAll()
                 } label: {
-                    Label("全部升级", systemImage: "arrow.up.circle")
+                    Label(L10n.tr("全部升级"), systemImage: "arrow.up.circle")
                 }
-                .help("升级当前列表中所有可更新的包")
+                .help(L10n.tr("升级当前列表中所有可更新的包"))
             }
 
             Menu {
-                Button("更新 Homebrew 源") { model.updateBrew() }
-                Button("清理旧版本与缓存") { model.cleanup() }
+                Button(L10n.tr("更新 Homebrew 源")) { model.updateBrew() }
+                Button(L10n.tr("清理旧版本与缓存")) { model.cleanup() }
             } label: {
-                Label("更多", systemImage: "ellipsis.circle")
+                Label(L10n.tr("更多"), systemImage: "ellipsis.circle")
             }
-            .help("更多操作")
+            .help(L10n.tr("更多操作"))
 
             Button {
                 Task { await model.refresh() }
             } label: {
-                Label("刷新", systemImage: "arrow.clockwise")
+                Label(L10n.tr("刷新"), systemImage: "arrow.clockwise")
             }
             .disabled(model.isLoading)
-            .help("重新读取已安装的包")
+            .help(L10n.tr("重新读取已安装的包"))
         }
     }
 }
@@ -120,9 +120,9 @@ struct BrewPackageRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Text(package.name).fontWeight(.medium).lineLimit(1)
-                    if package.isPinned { TagBadge(text: "已锁定", symbol: "pin.fill") }
+                    if package.isPinned { TagBadge(text: L10n.tr("已锁定"), symbol: "pin.fill") }
                     if package.kind == .formula && !package.installedOnRequest {
-                        TagBadge(text: "依赖")
+                        TagBadge(text: L10n.tr("依赖"))
                     }
                 }
                 if let desc = package.desc {

@@ -10,7 +10,7 @@ struct MacPrivilegedCommandRunner: PrivilegedCommandRunning {
         let result = await runner.run("/usr/bin/osascript", arguments: ["-e", script])
         // 用户取消授权时 osascript 返回 -128 错误
         if !result.succeeded && result.output.contains("-128") {
-            return .failure("已取消授权")
+            return .failure(L10n.tr("已取消授权"))
         }
         return result
     }

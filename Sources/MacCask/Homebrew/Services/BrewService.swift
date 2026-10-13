@@ -8,8 +8,8 @@ enum BrewError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .notInstalled: return "未检测到 Homebrew"
-        case .invalidOutput: return "无法解析 Homebrew 输出"
+        case .notInstalled: return L10n.tr("未检测到 Homebrew")
+        case .invalidOutput: return L10n.tr("无法解析 Homebrew 输出")
         case .commandFailed(let message): return message
         }
     }

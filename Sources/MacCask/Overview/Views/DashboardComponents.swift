@@ -66,14 +66,20 @@ struct StatTile: View {
                     .font(.system(size: 28, weight: .semibold, design: .rounded).monospacedDigit())
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
-                HStack(spacing: 6) {
-                    Text(detail).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                    if let badge {
-                        TagBadge(text: badge, style: .warning, symbol: "exclamationmark.circle.fill")
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(detail).font(.caption).foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, minHeight: 28, alignment: .topLeading)
+                    HStack {
+                        if let badge {
+                            TagBadge(text: badge, style: .warning, symbol: "exclamationmark.circle.fill")
+                        }
+                        Spacer(minLength: 0)
                     }
+                    // 状态标签独占一行，避免较长的英文说明被压缩；所有磁贴保持等高。
+                    .frame(height: 18)
                 }
-                // 固定行高，保证有无标签的磁贴高度一致
-                .frame(height: 18)
             }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)

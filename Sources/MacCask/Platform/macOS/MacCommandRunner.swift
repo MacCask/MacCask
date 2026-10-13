@@ -67,7 +67,7 @@ struct MacCommandRunner: CommandRunning {
                 try process.run()
             } catch {
                 handle.readabilityHandler = nil
-                continuation.resume(returning: .failure("无法启动 \(executable)：\(error.localizedDescription)"))
+                continuation.resume(returning: .failure(L10n.tr("无法启动 {0}：{1}", "\(executable)", "\(error.localizedDescription)")))
             }
         }
     }

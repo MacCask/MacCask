@@ -97,14 +97,14 @@ final class LaunchItemsViewModel {
                     items[index].isEnabled = enabled
                 }
             } else {
-                alertMessage = "无法\(enabled ? "开启" : "关闭")「\(item.displayName)」：\n\(result.output.trimmingCharacters(in: .whitespacesAndNewlines))"
+                alertMessage = L10n.tr("无法{0}「{1}」：\n{2}", "\(enabled ? L10n.tr("开启") : L10n.tr("关闭"))", "\(item.displayName)", "\(result.output.trimmingCharacters(in: .whitespacesAndNewlines))")
             }
         }
     }
 
     /// 登录项开关：关闭即移除并记录，开启即重新添加并删除记录
     private func toggleLoginItem(_ item: LaunchItem, _ enabled: Bool) async -> CommandResult {
-        guard let path = item.program else { return .failure("缺少应用路径") }
+        guard let path = item.program else { return .failure(L10n.tr("缺少应用路径")) }
         if enabled {
             let result = await Platform.current.loginItems.addLoginItem(path: path)
             if result.succeeded { disabledRepository.remove(path: path) }

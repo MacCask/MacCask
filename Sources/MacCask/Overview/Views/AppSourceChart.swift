@@ -11,9 +11,9 @@ struct AppSourceChart: View {
         let slices = model.sourceSlices
         let total = slices.reduce(0) { $0 + $1.count }
         let active = slices.first { $0.title == hoveredTitle }
-        DashboardCard(title: "应用来源", subtitle: "共 \(total) 个应用") {
+        DashboardCard(title: L10n.tr("应用来源"), subtitle: L10n.tr("共 {0} 个应用", "\(total)")) {
             if slices.isEmpty {
-                LoadingView(text: "正在扫描应用…").frame(height: 200)
+                LoadingView(text: L10n.tr("正在扫描应用…")).frame(height: 200)
             } else {
                 HStack(spacing: 24) {
                     donut(slices, total: total, active: active)
@@ -36,7 +36,7 @@ struct AppSourceChart: View {
     /// 环形图
     private func donut(_ slices: [AppSourceSlice], total: Int, active: AppSourceSlice?) -> some View {
         Chart(slices) { slice in
-            SectorMark(angle: .value("数量", slice.count), innerRadius: .ratio(0.64), angularInset: 1.5)
+            SectorMark(angle: .value(L10n.tr("数量"), slice.count), innerRadius: .ratio(0.64), angularInset: 1.5)
                 .cornerRadius(3)
                 .foregroundStyle(slice.color)
                 .opacity(active == nil || active?.id == slice.id ? 1 : 0.35)
@@ -54,7 +54,7 @@ struct AppSourceChart: View {
                 Text("\(active?.count ?? total)")
                     .font(.system(size: 26, weight: .semibold, design: .rounded).monospacedDigit())
                     .contentTransition(.numericText())
-                Text(active?.title ?? "全部应用").font(.caption).foregroundStyle(.secondary)
+                Text(active?.title ?? L10n.tr("全部应用")).font(.caption).foregroundStyle(.secondary)
             }
         }
         .frame(width: 170, height: 170)
@@ -72,6 +72,6 @@ struct AppSourceChart: View {
 
     /// 百分比文本
     private func percent(_ part: Int, _ total: Int) -> String {
-        total > 0 ? (Double(part) / Double(total)).formatted(.percent.precision(.fractionLength(0))) : "0%"
+        total > 0 ? (Double(part) / Double(total)).formatted(.percent.precision(.fractionLength(0)).locale(L10n.locale)) : "0%"
     }
 }

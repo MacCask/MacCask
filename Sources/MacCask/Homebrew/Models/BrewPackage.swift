@@ -10,8 +10,8 @@ enum BrewPackageKind: String, CaseIterable, Identifiable, Sendable {
     /// 中文说明
     var title: String {
         switch self {
-        case .formula: return "命令行工具"
-        case .cask: return "图形应用"
+        case .formula: return L10n.tr("命令行工具")
+        case .cask: return L10n.tr("图形应用")
         }
     }
 }

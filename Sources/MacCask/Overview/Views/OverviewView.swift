@@ -13,7 +13,7 @@ struct OverviewView: View {
                 .frame(maxWidth: .infinity)
         }
         .background(Color(nsColor: .windowBackgroundColor))
-        .navigationTitle("概览")
+        .navigationTitle(L10n.tr("概览"))
         .toolbar {
             ToolbarItem {
                 Button {
@@ -22,11 +22,11 @@ struct OverviewView: View {
                     if model.isRefreshing {
                         ProgressView().controlSize(.small)
                     } else {
-                        Label("刷新", systemImage: "arrow.clockwise")
+                        Label(L10n.tr("刷新"), systemImage: "arrow.clockwise")
                     }
                 }
                 .disabled(model.isRefreshing)
-                .help("重新扫描所有数据")
+                .help(L10n.tr("重新扫描所有数据"))
             }
         }
         .task { await model.loadIfNeeded() }
@@ -63,22 +63,22 @@ struct OverviewDashboard: View {
         let launch = model.launchItems
         let leftovers = model.leftovers
         return LazyVGrid(columns: [GridItem(.adaptive(minimum: 200), spacing: 16)], spacing: 16) {
-            StatTile(title: "应用程序",
+            StatTile(title: L10n.tr("应用程序"),
                      value: apps.hasLoaded ? "\(model.thirdPartyApps.count)" : "—",
-                     detail: apps.hasLoaded ? "第三方 · 另有 \(apps.apps.count - model.thirdPartyApps.count) 个系统应用" : "扫描中…",
+                     detail: apps.hasLoaded ? L10n.tr("第三方 · 另有 {0} 个系统应用", "\(apps.apps.count - model.thirdPartyApps.count)") : L10n.tr("扫描中…"),
                      symbol: "square.grid.2x2.fill", tint: ChartPalette.blue) { navigate(.apps) }
             StatTile(title: "Homebrew",
-                     value: brew.isBrewAvailable ? (brew.hasLoaded ? "\(brew.packages.count)" : "—") : "未安装",
-                     detail: brew.hasLoaded ? "\(brew.count(of: .formula)) 个工具 · \(brew.count(of: .cask)) 个应用" : "读取中…",
+                     value: brew.isBrewAvailable ? (brew.hasLoaded ? "\(brew.packages.count)" : "—") : L10n.tr("未安装"),
+                     detail: brew.hasLoaded ? L10n.tr("{0} 个工具 · {1} 个应用", "\(brew.count(of: .formula))", "\(brew.count(of: .cask))") : L10n.tr("读取中…"),
                      symbol: "mug.fill", tint: ChartPalette.orange,
-                     badge: brew.outdatedCount > 0 ? "\(brew.outdatedCount) 个可更新" : nil) { navigate(.homebrew) }
-            StatTile(title: "启动项",
+                     badge: brew.outdatedCount > 0 ? L10n.tr("{0} 个可更新", "\(brew.outdatedCount)") : nil) { navigate(.homebrew) }
+            StatTile(title: L10n.tr("启动项"),
                      value: launch.hasLoaded ? "\(launch.enabledCount)" : "—",
-                     detail: launch.hasLoaded ? "已开启 · 共 \(launch.items.count) 项，\(model.runningLaunchItems) 项运行中" : "读取中…",
+                     detail: launch.hasLoaded ? L10n.tr("已开启 · 共 {0} 项，{1} 项运行中", "\(launch.items.count)", "\(model.runningLaunchItems)") : L10n.tr("读取中…"),
                      symbol: "power", tint: ChartPalette.aqua) { navigate(.launchItems) }
-            StatTile(title: "残留文件",
+            StatTile(title: L10n.tr("残留文件"),
                      value: leftovers.hasLoaded ? ByteFormatter.string(model.leftoverActiveBytes) : "—",
-                     detail: leftovers.hasLoaded ? "\(leftovers.activeCount) 项可清理" : "扫描中…",
+                     detail: leftovers.hasLoaded ? L10n.tr("{0} 项可清理", "\(leftovers.activeCount)") : L10n.tr("扫描中…"),
                      symbol: "archivebox.fill", tint: ChartPalette.yellow) { navigate(.leftovers) }
         }
     }

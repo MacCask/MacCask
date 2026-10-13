@@ -7,9 +7,9 @@ struct TopAppsChart: View {
 
     var body: some View {
         let items = model.topApps()
-        DashboardCard(title: "占用最多的应用", subtitle: "第三方应用 · 右侧为占整个磁盘的比例") {
+        DashboardCard(title: L10n.tr("占用最多的应用"), subtitle: L10n.tr("第三方应用 · 右侧为占整个磁盘的比例")) {
             if items.isEmpty {
-                LoadingView(text: "正在计算应用大小…").frame(height: 240)
+                LoadingView(text: L10n.tr("正在计算应用大小…")).frame(height: 240)
             } else {
                 // 条形长度相对最大值缩放
                 let maxBytes = Double(items.first?.bytes ?? 1)
@@ -68,6 +68,6 @@ private struct TopAppRow: View {
         }
         .buttonStyle(.plain)
         .onHover { isHovering = $0 }
-        .help("查看「\(app.name)」的详情")
+        .help(L10n.tr("查看「{0}」的详情", "\(app.name)"))
     }
 }

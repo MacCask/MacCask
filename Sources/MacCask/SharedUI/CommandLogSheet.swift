@@ -23,7 +23,7 @@ struct CommandLogSheet: View {
 
             ScrollViewReader { proxy in
                 ScrollView {
-                    Text(session.log.isEmpty ? "等待输出…" : session.log)
+                    Text(session.log.isEmpty ? L10n.tr("等待输出…") : session.log)
                         .font(.system(.caption, design: .monospaced))
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -41,7 +41,7 @@ struct CommandLogSheet: View {
 
             HStack {
                 Spacer()
-                Button(session.isRunning ? "执行中…" : "完成") { dismiss() }
+                Button(session.isRunning ? L10n.tr("执行中…") : L10n.tr("完成")) { dismiss() }
                     .keyboardShortcut(.defaultAction)
                     .disabled(session.isRunning)
             }

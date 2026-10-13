@@ -8,7 +8,7 @@ struct LeftoversListView: View {
     var body: some View {
         Group {
             if model.isScanning && model.groups.isEmpty {
-                LoadingView(text: "正在扫描残留文件…")
+                LoadingView(text: L10n.tr("正在扫描残留文件…"))
             } else {
                 List(selection: $model.selection) {
                     ForEach(model.visibleGroups) { group in
@@ -20,29 +20,29 @@ struct LeftoversListView: View {
                 }
                 .overlay {
                     if model.visibleGroups.isEmpty && !model.isScanning {
-                        ContentUnavailableView("没有发现残留文件", systemImage: "sparkles",
-                                               description: Text("已卸载应用留下的文件会显示在这里"))
+                        ContentUnavailableView(L10n.tr("没有发现残留文件"), systemImage: "sparkles",
+                                               description: Text(L10n.tr("已卸载应用留下的文件会显示在这里")))
                     }
                 }
                 .safeAreaInset(edge: .top, spacing: 0) {
                     if !model.hasFullDiskAccess { FullDiskAccessBanner() }
                 }
                 .safeAreaInset(edge: .bottom, spacing: 0) {
-                    ListStatusBar(text: "\(model.visibleGroups.count) 项残留 · 共 \(ByteFormatter.string(model.visibleTotalSize))")
+                    ListStatusBar(text: L10n.tr("{0} 项残留 · 共 {1}", "\(model.visibleGroups.count)", "\(ByteFormatter.string(model.visibleTotalSize))"))
                 }
             }
         }
-        .navigationTitle("残留文件")
-        .searchable(text: $model.searchText, prompt: "搜索标识符")
+        .navigationTitle(L10n.tr("残留文件"))
+        .searchable(text: $model.searchText, prompt: L10n.tr("搜索标识符"))
         .toolbar { toolbar }
         .confirmationDialog(trashTitle, isPresented: Binding(get: { !pendingTrash.isEmpty }, set: { if !$0 { pendingTrash = [] } })) {
-            Button("移到废纸篓", role: .destructive) { model.moveToTrash(pendingTrash) }
-            Button("取消", role: .cancel) {}
+            Button(L10n.tr("移到废纸篓"), role: .destructive) { model.moveToTrash(pendingTrash) }
+            Button(L10n.tr("取消"), role: .cancel) {}
         } message: {
-            Text("文件会被移到废纸篓，清倒废纸篓前仍可恢复。")
+            Text(L10n.tr("文件会被移到废纸篓，清倒废纸篓前仍可恢复。"))
         }
-        .alert("提示", isPresented: Binding(get: { model.alertMessage != nil }, set: { if !$0 { model.alertMessage = nil } })) {
-            Button("好") {}
+        .alert(L10n.tr("提示"), isPresented: Binding(get: { model.alertMessage != nil }, set: { if !$0 { model.alertMessage = nil } })) {
+            Button(L10n.tr("好")) {}
         } message: {
             Text(model.alertMessage ?? "")
         }
@@ -53,7 +53,7 @@ struct LeftoversListView: View {
     private var trashTitle: String {
         let targets = model.groups.filter { pendingTrash.contains($0.id) }
         let size = targets.reduce(0) { $0 + $1.totalSize }
-        return "将 \(targets.count) 项残留（\(ByteFormatter.string(size))）移到废纸篓？"
+        return L10n.tr("将 {0} 项残留（{1}）移到废纸篓？", "\(targets.count)", "\(ByteFormatter.string(size))")
     }
 
     /// 请求删除（弹出确认）
@@ -66,16 +66,16 @@ struct LeftoversListView: View {
     private func contextMenu(for ids: Set<LeftoverGroup.ID>) -> some View {
         let targets = model.groups.filter { ids.contains($0.id) }
         if !targets.isEmpty {
-            Button("在访达中显示") {
+            Button(L10n.tr("在访达中显示")) {
                 Platform.current.system.revealInFinder(targets.flatMap { $0.files.map(\.url) })
             }
             Divider()
             if targets.allSatisfy(\.isIgnored) {
-                Button("取消忽略") { model.unignore(ids) }
+                Button(L10n.tr("取消忽略")) { model.unignore(ids) }
             } else {
-                Button("忽略") { model.ignore(ids) }
+                Button(L10n.tr("忽略")) { model.ignore(ids) }
             }
-            Button("移到废纸篓…", role: .destructive) { requestTrash(ids) }
+            Button(L10n.tr("移到废纸篓…"), role: .destructive) { requestTrash(ids) }
         }
     }
 
@@ -84,28 +84,28 @@ struct LeftoversListView: View {
     private var toolbar: some ToolbarContent {
         ToolbarItemGroup {
             Menu {
-                Toggle("显示低可信度项", isOn: $model.showLowConfidence)
-                Toggle("显示已忽略项", isOn: $model.showIgnored)
+                Toggle(L10n.tr("显示低可信度项"), isOn: $model.showLowConfidence)
+                Toggle(L10n.tr("显示已忽略项"), isOn: $model.showIgnored)
             } label: {
-                Label("筛选", systemImage: "line.3.horizontal.decrease.circle")
+                Label(L10n.tr("筛选"), systemImage: "line.3.horizontal.decrease.circle")
             }
-            .help("筛选")
+            .help(L10n.tr("筛选"))
 
             Button {
                 requestTrash(model.selection)
             } label: {
-                Label("移到废纸篓", systemImage: "trash")
+                Label(L10n.tr("移到废纸篓"), systemImage: "trash")
             }
             .disabled(model.selection.isEmpty || model.isTrashing)
-            .help("将选中的残留移到废纸篓")
+            .help(L10n.tr("将选中的残留移到废纸篓"))
 
             Button {
                 Task { await model.refresh() }
             } label: {
-                Label("重新扫描", systemImage: "arrow.clockwise")
+                Label(L10n.tr("重新扫描"), systemImage: "arrow.clockwise")
             }
             .disabled(model.isScanning)
-            .help("重新扫描残留文件")
+            .help(L10n.tr("重新扫描残留文件"))
         }
     }
 }
@@ -126,12 +126,12 @@ struct LeftoverRow: View {
                 HStack(spacing: 6) {
                     Text(group.displayName).fontWeight(.medium).lineLimit(1)
                     if group.confidence == .low {
-                        TagBadge(text: "低可信度", style: .warning)
-                            .help("同一开发商仍有应用安装，可能是共享数据")
+                        TagBadge(text: L10n.tr("低可信度"), style: .warning)
+                            .help(L10n.tr("同一开发商仍有应用安装，可能是共享数据"))
                     }
-                    if group.isIgnored { TagBadge(text: "已忽略") }
+                    if group.isIgnored { TagBadge(text: L10n.tr("已忽略")) }
                 }
-                Text("\(group.identifier) · \(group.files.count) 个位置")
+                Text(L10n.tr("{0} · {1} 个位置", "\(group.identifier)", "\(group.files.count)"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)

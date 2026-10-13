@@ -108,7 +108,7 @@ final class LeftoversViewModel {
             selection = selection.filter { id in groups.contains { $0.id == id } }
             if !failures.isEmpty {
                 let list = failures.keys.map(\.path).sorted().joined(separator: "\n")
-                alertMessage = "以下 \(failures.count) 项未能移到废纸篓：\n\(list)"
+                alertMessage = L10n.tr("以下 {0} 项未能移到废纸篓：\n{1}", "\(failures.count)", "\(list)")
             }
             isTrashing = false
         }

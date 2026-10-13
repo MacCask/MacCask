@@ -8,7 +8,7 @@ struct DiskUsageCard: View {
     @State private var hoveredID: String?
 
     var body: some View {
-        DashboardCard(title: "磁盘占用", subtitle: model.disk?.volumeName) {
+        DashboardCard(title: L10n.tr("磁盘占用"), subtitle: model.disk?.volumeName) {
             if let disk = model.disk {
                 headline(disk)
             }
@@ -21,7 +21,7 @@ struct DiskUsageCard: View {
                     legend(disk, segments: segments)
                 }
             } else {
-                Text("无法读取磁盘信息").foregroundStyle(.secondary)
+                Text(L10n.tr("无法读取磁盘信息")).foregroundStyle(.secondary)
             }
         }
     }
@@ -31,13 +31,13 @@ struct DiskUsageCard: View {
         let free = 1 - disk.usedFraction
         return HStack(alignment: .firstTextBaseline, spacing: 10) {
             if free < 0.2 {
-                TagBadge(text: free < 0.1 ? "空间不足" : "空间偏紧",
+                TagBadge(text: free < 0.1 ? L10n.tr("空间不足") : L10n.tr("空间偏紧"),
                          style: .warning, symbol: "exclamationmark.triangle.fill")
             }
             VStack(alignment: .trailing, spacing: 2) {
                 Text(model.percent(disk.usedFraction))
                     .font(.system(size: 34, weight: .semibold, design: .rounded).monospacedDigit())
-                Text("已用 \(ByteFormatter.string(disk.usedBytes)) / 共 \(ByteFormatter.string(disk.totalBytes))")
+                Text(L10n.tr("已用 {0} / 共 {1}", "\(ByteFormatter.string(disk.usedBytes))", "\(ByteFormatter.string(disk.totalBytes))"))
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
             }
@@ -59,12 +59,12 @@ struct DiskUsageCard: View {
                         .frame(width: width)
                         .opacity(hoveredID == nil || hoveredID == segment.id ? 1 : 0.35)
                         .onHover { hoveredID = $0 ? segment.id : nil }
-                        .help("\(segment.title)：\(ByteFormatter.string(segment.bytes ?? 0))（占磁盘 \(model.percent(disk.fraction(of: segment.bytes ?? 0)))）")
+                        .help(L10n.tr("{0}：{1}（占磁盘 {2}）", "\(segment.title)", "\(ByteFormatter.string(segment.bytes ?? 0))", "\(model.percent(disk.fraction(of: segment.bytes ?? 0)))"))
                 }
                 Rectangle().fill(ChartPalette.track)
                     .opacity(hoveredID == nil || hoveredID == "free" ? 1 : 0.5)
                     .onHover { hoveredID = $0 ? "free" : nil }
-                    .help("可用：\(ByteFormatter.string(disk.availableBytes))")
+                    .help(L10n.tr("可用：{0}", "\(ByteFormatter.string(disk.availableBytes))"))
             }
             .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
             .animation(.easeOut(duration: 0.15), value: hoveredID)
@@ -79,7 +79,7 @@ struct DiskUsageCard: View {
             ForEach(segments) { segment in
                 legendRow(segment, disk: disk)
             }
-            LegendItem(color: ChartPalette.track, title: "可用", value: ByteFormatter.string(disk.availableBytes),
+            LegendItem(color: ChartPalette.track, title: L10n.tr("可用"), value: ByteFormatter.string(disk.availableBytes),
                        secondary: model.percent(1 - disk.usedFraction),
                        isDimmed: hoveredID != nil && hoveredID != "free")
                 .onHover { hoveredID = $0 ? "free" : nil }
@@ -90,7 +90,7 @@ struct DiskUsageCard: View {
     @ViewBuilder
     private func legendRow(_ segment: DiskSegment, disk: DiskUsage) -> some View {
         let item = LegendItem(color: segment.color, title: segment.title,
-                              value: segment.bytes.map(ByteFormatter.string) ?? "计算中…",
+                              value: segment.bytes.map(ByteFormatter.string) ?? L10n.tr("计算中…"),
                               secondary: segment.bytes.map { model.percent(disk.fraction(of: $0)) },
                               isDimmed: hoveredID != nil && hoveredID != segment.id)
             .contentShape(Rectangle())
@@ -98,7 +98,7 @@ struct DiskUsageCard: View {
         if let section = segment.section {
             Button { navigate(section) } label: { item }
                 .buttonStyle(.plain)
-                .help("前往\(section.title)")
+                .help(L10n.tr("前往{0}", "\(section.title)"))
         } else {
             item
         }

@@ -6,7 +6,7 @@ enum LaunchItemController {
     /// - 代理：在 gui/<uid> 域中 enable/disable，并立即加载/卸载
     /// - 守护进程：在 system 域中操作，需要管理员权限
     static func setEnabled(_ item: LaunchItem, enabled: Bool) async -> CommandResult {
-        guard let plist = item.plistURL else { return .failure("缺少 plist 路径") }
+        guard let plist = item.plistURL else { return .failure(L10n.tr("缺少 plist 路径")) }
         let domain = item.source == .systemDaemon ? "system" : "gui/\(getuid())"
         let target = "\(domain)/\(item.label)"
 

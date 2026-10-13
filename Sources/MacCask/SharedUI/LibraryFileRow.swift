@@ -21,9 +21,9 @@ struct LibraryFileRow: View {
                     Text(file.url.lastPathComponent)
                         .lineLimit(1)
                         .truncationMode(.middle)
-                    TagBadge(text: file.category.rawValue)
+                    TagBadge(text: file.category.title)
                     if file.isSystemLevel {
-                        TagBadge(text: "需管理员", style: .warning, symbol: "lock.fill")
+                        TagBadge(text: L10n.tr("需管理员"), style: .warning, symbol: "lock.fill")
                     }
                 }
                 Text(file.displayPath)
