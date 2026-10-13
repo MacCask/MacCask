@@ -91,6 +91,12 @@ struct DiskUsage: Sendable {
 
 /// 系统集成接口（访达、系统设置、权限检测等）
 protocol SystemIntegrating: Sendable {
+    /// 激活应用并恢复最小化窗口，供菜单栏入口调用。
+    @MainActor func activateApplication()
+    /// 正常退出应用，交由系统完成窗口和进程清理。
+    @MainActor func terminateApplication()
+    /// 为直接运行的开发进程设置应用图标；正式应用使用系统资源目录。
+    @MainActor func setApplicationIcon(from url: URL)
     /// 在访达中显示并选中文件
     @MainActor func revealInFinder(_ urls: [URL])
     /// 打开「完全磁盘访问权限」设置页

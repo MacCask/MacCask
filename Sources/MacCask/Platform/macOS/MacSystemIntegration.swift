@@ -2,6 +2,25 @@ import AppKit
 
 /// macOS 系统集成实现：访达、系统设置、权限检测、运行中应用
 struct MacSystemIntegration: SystemIntegrating {
+    /// 打开菜单栏入口时激活进程，并恢复最小化的主窗口。
+    @MainActor func activateApplication() {
+        NSApp.activate(ignoringOtherApps: true)
+        for window in NSApp.windows where window.canBecomeMain && window.isMiniaturized {
+            window.deminiaturize(nil)
+        }
+    }
+
+    /// 使用系统正常退出流程，保留应用代理的退出处理。
+    @MainActor func terminateApplication() {
+        NSApp.terminate(nil)
+    }
+
+    /// 开发启动时加载兼容图标，不覆盖正式应用的系统动态外观。
+    @MainActor func setApplicationIcon(from url: URL) {
+        guard let image = NSImage(contentsOf: url) else { return }
+        NSApp.applicationIconImage = image
+    }
+
     /// 在访达中显示并选中文件
     @MainActor func revealInFinder(_ urls: [URL]) {
         NSWorkspace.shared.activateFileViewerSelecting(urls)

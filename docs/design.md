@@ -29,7 +29,7 @@ MacCask/
 ├── Package.swift
 ├── Makefile                      # 构建、打包、签名
 ├── Resources/Info.plist          # .app 的 Info.plist 模板
-├── Scripts/make-icon.swift       # 生成应用图标
+├── Scripts/build-icon.sh         # 编译 Icon Composer 图标与兼容资源
 ├── docs/
 └── Sources/MacCask/
     ├── App/                      # 入口、应用代理、主窗口、侧边栏导航、全局状态
@@ -170,3 +170,25 @@ macOS 没有「禁用登录项」的公开接口，关闭即从登录项中移�
 - `make run`：打包并启动
 - `make install`：复制到 `/Applications`
 - `make clean`：清理
+
+## 8. 应用图标设计（已选 H「折叠」）
+
+- 用户已选定第三轮第一个方案 H：紫色顶折面、钴蓝侧面、青色下折面形成开放的 C。按最新反馈，源图改为平面、满版方形，移除预制圆角底板、阴影与立体材质。
+- 正式图标源为 `Resources/AppIcon.icon`：`icon.json` 定义背景、外观和材质，`Assets/` 中三个无圆角、无阴影的 SVG 色面共同构成折叠 C。`Resources/AppIcon/master.png` 与 `AppIcon-1024.png` 保留为选定平面方案参考。
+- `Scripts/build-icon.sh` 调用 Xcode 26 的 `actool`，由系统编译器生成 `Assets.car` 和兼容 ICNS；`make app` 将它们嵌入应用，并合并编译器生成的 `CFBundleIconName` / `CFBundleIconFile` 后签名。圆角和材质由苹果图标渲染器处理，不画进源图。
+- 编译目标最低 macOS 15：新系统读取分层资源，旧系统读取编译器输出的兼容 ICNS。`Resources/AppIcon/Previews/` 保存苹果 `ictool` 输出的默认、深色、浅/深着色、浅/深透明六种外观预览。
+- `swift run` 从 SwiftPM 资源包读取预生成 ICNS，通过 `SystemIntegrating.setApplicationIcon` 的 macOS 实现设置 Dock 图标；不依赖当前工作目录。正式 `.app` 不执行这一步，避免覆盖系统动态外观。修改 `.icon` 后运行 `make icon` 同步开发资源，`make app` 自动执行。
+- 菜单栏/托盘图标独立于 Dock：`Resources/MenuBar/MenuBarTemplate.svg` 为单色折叠 C 轮廓，`MenuBarTemplate.pdf` 为 18pt 矢量模板，另有 18/36 像素 PNG 和深浅背景预览。通过 `Scripts/make-menubar-icon.swift` 统一生成，不包含底板、圆角或阴影。
+- `MenuBar/MenuBarMenu.swift` 使用 `MenuBarExtra` 显示模板图标，系统按背景与选中状态着色。菜单只提供“打开 MacCask”和“退出 MacCask”；打开动作复用主窗口并恢复最小化状态。
+- 默认显示菜单栏图标，支持在“视图切换 → 显示菜单栏图标”中隐藏并保存偏好。开启时关闭主窗口仍运行，可从菜单栏重新打开；隐藏时关闭最后一个窗口即退出。
+- 打包时复制 SwiftPM 资源包到应用的 `Contents/Resources`，`AppResources` 统一定位资源；菜单栏图标在正式应用和 `swift run` 下使用相同的 PDF，不依赖开发目录。
+
+### 方案探索记录
+
+- 图标表达应用收纳与管理，兼顾 Homebrew、启动项和残留清理的产品定位。
+- 首轮探索四个方向：A 蓝色应用匣、B 琥珀 Cask、C 几何 C、D 应用矩阵；通过独立概念预览比较轮廓、配色和 Dock 辨识度。
+- 采用简洁主体与适度立体质感，不在图标中放产品全名；最终图形需兼顾小尺寸识别。
+- 探索阶段先选择视觉方向，选定后再制作透明边界与各规格并接入打包。
+- 原有渐变箱子图标现已由选定的折叠图标替换。
+- 第二轮反馈：首轮方案细节过多，不适合任务栏小尺寸显示。新方向以单一粗轮廓、宽负空间、纯色平面为约束，取消立体材质、渐变、阴影和内部应用卡片；探索开口 C、极简收纳匣、折线 M，并提供小尺寸预览。首轮方案不作为后续规格扩展依据。
+- 第三轮反馈：第二轮过于普通、粗糙，不能以小尺寸适配为由牺牲美感。改为定制造型，重点处理曲线比例、图形重心、负空间和有限的色面叠合；允许克制的渐变与浅层质感，以折叠容器、抽象 Cask 印记、归拢结构探索品牌辨识度。前两轮均未选定，小尺寸可读与视觉美感需同时满足。

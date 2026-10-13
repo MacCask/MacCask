@@ -1,0 +1,47 @@
+{
+  "fill": {
+    "solid": "srgb:0.98039,0.98039,0.97255,1.00000"
+  },
+  "fill-specializations": [
+    {
+      "appearance": "dark",
+      "value": {
+        "solid": "srgb:0.10,0.12,0.18,1.00000"
+      }
+    }
+  ],
+  "groups": [
+    {
+      "name": "折叠 C",
+      "layers": [
+        {
+          "image-name": "01-side.svg",
+          "name": "钴蓝侧面"
+        },
+        {
+          "image-name": "02-bottom.svg",
+          "name": "青色下折面"
+        },
+        {
+          "image-name": "03-top.svg",
+          "name": "紫色顶折面"
+        }
+      ],
+      "lighting": "combined",
+      "specular": true,
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.12
+      },
+      "translucency": {
+        "enabled": false,
+        "value": 0.5
+      }
+    }
+  ],
+  "supported-platforms": {
+    "squares": [
+      "macOS"
+    ]
+  }
+}

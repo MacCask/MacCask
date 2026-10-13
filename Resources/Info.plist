@@ -6,8 +6,6 @@
 	<string>zh_CN</string>
 	<key>CFBundleExecutable</key>
 	<string>MacCask</string>
-	<key>CFBundleIconFile</key>
-	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.maccask.app</string>
 	<key>CFBundleInfoDictionaryVersion</key>

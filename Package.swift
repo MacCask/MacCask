@@ -9,6 +9,7 @@ let package = Package(
         .executableTarget(
             name: "MacCask",
             path: "Sources/MacCask",
+            resources: [.copy("App/Resources")],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
         .testTarget(

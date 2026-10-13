@@ -5,8 +5,7 @@ BUILD       ?= $(shell date +%Y%m%d%H%M)
 BUILD_DIR   := build
 APP_BUNDLE  := $(BUILD_DIR)/$(APP_NAME).app
 BIN_PATH     = $(shell swift build -c release --show-bin-path)
-ICON_SET    := $(BUILD_DIR)/AppIcon.iconset
-ICON_FILE   := $(BUILD_DIR)/AppIcon.icns
+ICON_DIR    := $(BUILD_DIR)/icon-composer
 # 自动探测系统中第一个可用的代码签名身份（自签证书），可通过 make SIGN_IDENTITY="xxx" 覆盖
 SIGN_IDENTITY ?= $(shell security find-identity -v -p codesigning | awk -F'"' 'NR==1 && NF>1 {print $$2}')
 
@@ -15,24 +14,22 @@ SIGN_IDENTITY ?= $(shell security find-identity -v -p codesigning | awk -F'"' 'N
 all: app
 
 # Release 编译
-build:
+build: icon
 	swift build -c release
 
 # 生成应用图标
-$(ICON_FILE): Scripts/make-icon.swift
-	@mkdir -p $(ICON_SET)
-	swift Scripts/make-icon.swift $(ICON_SET)
-	iconutil -c icns $(ICON_SET) -o $(ICON_FILE)
-
-icon: $(ICON_FILE)
+icon:
+	bash Scripts/build-icon.sh
 
 # 组装 .app 并签名
-app: build $(ICON_FILE)
+app: build
 	@rm -rf $(APP_BUNDLE)
 	@mkdir -p $(APP_BUNDLE)/Contents/MacOS $(APP_BUNDLE)/Contents/Resources
 	cp "$(BIN_PATH)/$(APP_NAME)" $(APP_BUNDLE)/Contents/MacOS/$(APP_NAME)
 	sed -e 's/__VERSION__/$(VERSION)/' -e 's/__BUILD__/$(BUILD)/' Resources/Info.plist > $(APP_BUNDLE)/Contents/Info.plist
-	cp $(ICON_FILE) $(APP_BUNDLE)/Contents/Resources/AppIcon.icns
+	cp $(ICON_DIR)/AppIcon.icns $(ICON_DIR)/Assets.car $(APP_BUNDLE)/Contents/Resources/
+	cp -R "$(BIN_PATH)/MacCask_MacCask.bundle" $(APP_BUNDLE)/Contents/Resources/
+	/usr/libexec/PlistBuddy -c "Merge $(ICON_DIR)/partial.plist" $(APP_BUNDLE)/Contents/Info.plist
 	@if [ -n "$(SIGN_IDENTITY)" ]; then \
 		echo "使用证书签名: $(SIGN_IDENTITY)"; \
 		codesign --force --deep --timestamp=none --sign "$(SIGN_IDENTITY)" $(APP_BUNDLE); \

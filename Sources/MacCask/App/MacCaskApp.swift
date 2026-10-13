@@ -5,9 +5,10 @@ import SwiftUI
 struct MacCaskApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var state = AppState()
+    @AppStorage("showsMenuBarIcon") private var showsMenuBarIcon = true
 
     var body: some Scene {
-        WindowGroup {
+        WindowGroup(id: "main") {
             ContentView()
                 .environment(state)
                 .frame(minWidth: 980, minHeight: 600)
@@ -18,6 +19,8 @@ struct MacCaskApp: App {
             // 去掉「新建窗口」，本应用只需要单窗口
             CommandGroup(replacing: .newItem) {}
             CommandMenu("视图切换") {
+                Toggle("显示菜单栏图标", isOn: $showsMenuBarIcon)
+                Divider()
                 ForEach(Array(SidebarSection.allCases.enumerated()), id: \.element) { index, section in
                     Button(section.title) { state.section = section }
                         .keyboardShortcut(KeyEquivalent(Character("\(index + 1)")), modifiers: .command)
@@ -27,6 +30,12 @@ struct MacCaskApp: App {
                     .keyboardShortcut("r", modifiers: .command)
             }
         }
+        MenuBarExtra(isInserted: $showsMenuBarIcon) {
+            MenuBarMenu()
+        } label: {
+            MenuBarIcon()
+        }
+        .menuBarExtraStyle(.menu)
     }
 }
 
