@@ -12,6 +12,7 @@
 | --- | --- |
 | `BUILD_CERTIFICATE_BASE64` | 同时包含签名证书和**私钥**的 `.p12` 文件，经 Base64 编码后的内容 |
 | `P12_PASSWORD` | 导出这个 `.p12` 时自己设置的密码 |
+| `SPARKLE_PRIVATE_KEY` | Sparkle 更新签名私钥，直接粘贴导出文件内容，不要再次 Base64 编码 |
 
 当前本机签名身份为 `Flick Self-Signed Code Signing`。工作流从导入的 `.p12` 自动识别签名身份，不需要单独设置名称 Secret；导出时只选择这一个签名身份及其私钥。
 
@@ -72,3 +73,42 @@ make release
 ```
 
 runner 标签与 Xcode 版本依据 [GitHub runner 镜像](https://github.com/actions/runner-images)；证书导入参考 [GitHub macOS 签名文档](https://docs.github.com/en/actions/how-tos/deploy/deploy-to-third-party-platforms/sign-xcode-applications)，另为自签证书增加信任设置。
+
+## 应用内更新
+
+Action 自动生成并签署 `appcast-arm64.xml` 和 `appcast-x86_64.xml`，与 DMG 一起作为 Release 附件发布。应用通过 `releases/latest/download/appcast-架构.xml` 获取最新稳定版；无需 GitHub Pages 或额外服务器。不要把缺少更新清单的旧版手动设置成 Latest。
+
+在项目目录复制已生成的更新私钥，然后添加到仓库 Secret `SPARKLE_PRIVATE_KEY`：
+
+```sh
+pbcopy < .signing/sparkle-private-key
+```
+
+私钥也保存在登录钥匙串的 `com.maccask.app.sparkle` 账户；公钥在 `Resources/SparklePublicKey.txt`，会在打包时写入应用。务必备份私钥并在后续版本保持一致，不能每次发布重新生成。现有 P12 和密码两个 Secret 保持不变。
+
+更新器同时验证清单与 DMG 签名，在解包前拒绝篡改。自动检查默认关闭，可在设置中开启；下载、安装与重启由标准更新窗口交互完成。应用需安装到可写位置，不能直接在只读 DMG 中更新。首次接入更新器需要手动安装。
+
+正式版 `CFBundleVersion` 与 `CFBundleShortVersionString` 均取 `VERSION`；每次更新必须提高版本号，不沿用旧 CI 构建序号或本地时间戳。已有旧版没有更新器，因此首次手动安装完成版本规则切换。`BUILD` 仅用于开发验证，不应覆盖正式版本规则。
+
+本地验证生成清单：
+
+```sh
+make release
+SPARKLE_PRIVATE_KEY="$(cat .signing/sparkle-private-key)" bash Scripts/Release/generate-appcast.sh build/releases "$(uname -m)" "v$(cat VERSION)"
+python3 Tests/Release/test-updater.py
+```
+
+自签不是 Apple 公证。发布前还应使用两个不同版本的已安装应用，在测试目录验证下载、退出、替换和重启全过程。不要为测试推送虚假的正式版本。
+
+后台检查发现新版仅显示页面提示，不弹窗或自动下载；点击“查看更新…”后再选择下载与安装。
+
+### 本机跨版本集成测试
+
+在已解析 Sparkle 依赖、存在 `.signing/sparkle-private-key` 与本机签名身份的情况下运行：
+
+```sh
+python3 Tests/Release/run-update-integration.py
+python3 Tests/Release/run-update-integration.py --scenario cancel
+```
+
+测试会短暂打开独立测试应用的 Sparkle 窗口，并在该进程内模拟用户操作。它复用正式更新服务和提示组件，使用本机回环服务器、临时 Bundle ID 和虚构版本；不会替换 Applications 中的应用。第一项实际下载、替换并重启到新版；第二项验证稍后提醒不下载或安装。日志保存在输出的 build/update-integration-* 目录。需要可用的 macOS 图形会话，不在无桌面的 CI 中运行。

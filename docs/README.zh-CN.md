@@ -18,6 +18,10 @@
 - **原生界面**：浅色与深色外观、侧边栏导航、列表与详情布局，以及可选的菜单栏入口。
 - **多语言**：支持英语和简体中文，默认跟随系统语言，也可以保存自己的选择。
 
+## 应用更新
+
+应用菜单提供“检查更新…”，设置中可开启自动检查。更新使用 GitHub Release 中对应架构的 DMG，并验证更新签名。旧版用户需先手动安装一次带更新功能的版本。
+
 ## 环境要求
 
 | 项目 | 要求 |
@@ -27,7 +31,7 @@
 | 打包工具 | 完整 Xcode 26 或更新版本，并设为当前开发者目录，用于 Icon Composer 图标资源及 `actool` |
 | Homebrew | 可选，仅管理 Homebrew 软件包时需要 |
 
-项目使用 Swift Package Manager 和 Apple 框架，没有外部 Swift Package 依赖。默认构建当前 Mac 架构的程序；Makefile 不生成通用二进制。
+项目使用 Swift Package Manager 和 Apple 框架，通过 Swift Package Manager 引入 Sparkle 更新框架。默认构建当前 Mac 架构的程序；Makefile 不生成通用二进制。
 
 ## 从源码构建
 

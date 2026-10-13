@@ -150,6 +150,9 @@ struct ScreenshotCanvas: View {
                 Text(L10n.tr("演示数据")).font(.caption).foregroundStyle(.secondary)
             }.padding(.horizontal, 20).frame(height: 48)
             Divider()
+            if CommandLine.arguments.contains("--update-preview") {
+                UpdateNoticeContent(version: "1.2.0") {}
+            }
             HStack(alignment: .top, spacing: 0) {
                 sidebar
                 Divider()

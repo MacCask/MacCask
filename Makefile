@@ -12,7 +12,7 @@ endif
 ifeq ($(filter $(ARCH),x86_64 arm64),)
 $(error ARCH 只支持 x86_64 或 arm64)
 endif
-BUILD       ?= $(shell date +%Y%m%d%H%M)
+BUILD       ?= $(VERSION)
 BUILD_DIR   := build
 APP_BUNDLE  := $(BUILD_DIR)/$(APP_NAME).app
 BIN_PATH     = $(shell swift build -c release --arch $(ARCH) --show-bin-path)
@@ -42,12 +42,14 @@ app: build
 	cp -R "$(BIN_PATH)/MacCask_MacCask.bundle" $(APP_BUNDLE)/Contents/Resources/
 	cp -R Resources/Localizations/*.lproj $(APP_BUNDLE)/Contents/Resources/
 	/usr/libexec/PlistBuddy -c "Merge $(ICON_DIR)/partial.plist" $(APP_BUNDLE)/Contents/Info.plist
+	python3 Scripts/Release/configure-updater.py "$(APP_BUNDLE)" "$(ARCH)"
+	bash Scripts/Release/embed-sparkle.sh "$(APP_BUNDLE)" "$(if $(SIGN_IDENTITY),$(SIGN_IDENTITY),-)"
 	@if [ -n "$(SIGN_IDENTITY)" ]; then \
 		echo "使用证书签名: $(SIGN_IDENTITY)"; \
-		codesign --force --deep --timestamp=none --sign "$(SIGN_IDENTITY)" $(APP_BUNDLE); \
+		codesign --force --timestamp=none --sign "$(SIGN_IDENTITY)" $(APP_BUNDLE); \
 	else \
 		echo "未找到代码签名证书，使用 ad-hoc 签名"; \
-		codesign --force --deep --sign - $(APP_BUNDLE); \
+		codesign --force --sign - $(APP_BUNDLE); \
 	fi
 	@echo "打包完成: $(APP_BUNDLE)"
 

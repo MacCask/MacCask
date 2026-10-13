@@ -18,6 +18,10 @@ A native macOS application manager built with SwiftUI. Inspect installed apps an
 - **Native interface:** light/dark appearance, sidebar navigation, list-and-detail views, and an optional menu bar entry.
 - **Languages:** English and Simplified Chinese, with a saved preference and system-language matching by default.
 
+## App updates
+
+Use **MacCask → Check for Updates…**, or enable automatic checks in Settings. Updates use signed, architecture-specific DMGs from GitHub Releases. Versions without the updater require one manual installation first.
+
 ## Requirements
 
 | Requirement | Details |
@@ -27,7 +31,7 @@ A native macOS application manager built with SwiftUI. Inspect installed apps an
 | Packaging tools | Full Xcode 26 or later, selected as the active developer directory, for the Icon Composer assets and `actool` |
 | Homebrew | Optional; needed only to manage Homebrew packages |
 
-The project uses Swift Package Manager and Apple's frameworks, with no external Swift package dependencies. A normal build targets the architecture of the Mac doing the build; the Makefile does not produce a universal binary.
+The project uses Swift Package Manager and Apple's frameworks, with Sparkle for in-app updates. A normal build targets the architecture of the Mac doing the build; the Makefile does not produce a universal binary.
 
 ## Build from source
 

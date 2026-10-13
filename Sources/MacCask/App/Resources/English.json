@@ -293,5 +293,12 @@
   "隐藏已忽略项": "Hide ignored",
   "文件可从废纸篓恢复": "Files can be restored from Trash",
   "选择 {0}": "Select {0}",
-  "启动时运行": "Run at Login"
+  "启动时运行": "Run at Login",
+  "软件更新": "Software Updates",
+  "自动检查更新": "Automatically check for updates",
+  "检查更新…": "Check for Updates…",
+  "MacCask {0} 可更新": "MacCask {0} is available",
+  "准备好时再下载安装。": "Download and install when you are ready.",
+  "查看更新…": "View Update…",
+  "发现新版时在页面提示，由你决定何时下载安装。": "New versions appear in the app. You choose when to download and install."
 }

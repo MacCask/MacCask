@@ -85,6 +85,7 @@ def main():
     """构建隔离的渲染进程，只导出 SwiftUI 画布，不截图桌面。"""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--language", choices=["en", "zh-Hans"], default="en")
+    parser.add_argument("--update-preview", action="store_true", help="使用虚构版本展示更新提示，不检查网络")
     parser.add_argument("--output", type=pathlib.Path, default=ROOT / "docs/screenshots")
     arguments = parser.parse_args()
     output = arguments.output.resolve()
@@ -93,7 +94,7 @@ def main():
         project = pathlib.Path(temporary)
         prepare_sources(project)
         subprocess.run(["swift", "build", "--package-path", str(project)], check=True)
-        subprocess.run([str(project / ".build/debug/MacCask"), str(output), arguments.language], check=True)
+        subprocess.run([str(project / ".build/debug/MacCask"), str(output), arguments.language] + (["--update-preview"] if arguments.update_preview else []), check=True)
 
 
 if __name__ == "__main__":

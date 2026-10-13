@@ -4,6 +4,7 @@ import SwiftUI
 @main
 struct MacCaskApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    @StateObject private var updater = MacAppUpdater.shared
     @State private var state = AppState()
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("showsMenuBarIcon") private var showsMenuBarIcon = true
@@ -26,6 +27,10 @@ struct MacCaskApp: App {
         .commands {
             // 去掉「新建窗口」，本应用只需要单窗口
             CommandGroup(replacing: .newItem) {}
+            CommandGroup(after: .appInfo) {
+                Button(L10n.tr("检查更新…")) { updater.checkForUpdates() }
+                    .disabled(!updater.canCheckForUpdates)
+            }
             // Settings 场景自动提供带图标的设置菜单及快捷键，不再添加重复入口。
             CommandMenu(L10n.tr("视图切换")) {
                 Toggle(L10n.tr("显示菜单栏图标"), isOn: $showsMenuBarIcon)
@@ -49,7 +54,7 @@ struct MacCaskApp: App {
         }
         .menuBarExtraStyle(.menu)
         Settings {
-            LanguageSettingsView()
+            LanguageSettingsView(updater: updater)
         }
     }
 }

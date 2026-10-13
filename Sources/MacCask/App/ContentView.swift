@@ -28,6 +28,9 @@ struct ContentView: View {
                 }
             }
         }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            UpdateNoticeView(updater: .shared)
+        }
         .task {
             // 启动后在后台预加载 Homebrew，让侧边栏尽早显示可更新数量
             await state.homebrew.loadIfNeeded()

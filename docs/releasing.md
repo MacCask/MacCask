@@ -12,6 +12,7 @@ In **Settings → Secrets and variables → Actions → New repository secret**,
 | --- | --- |
 | `BUILD_CERTIFICATE_BASE64` | Base64-encoded `.p12` containing the signing certificate **and its private key** |
 | `P12_PASSWORD` | The password you choose when exporting that `.p12` |
+| `SPARKLE_PRIVATE_KEY` | Exported Sparkle Ed25519 private key; paste the file contents without Base64-encoding again |
 
 The current local signing identity is `Flick Self-Signed Code Signing`. The workflow identifies the signer automatically from the imported `.p12`; no identity-name secret is required. Export only this signing identity, with its private key.
 
@@ -72,3 +73,42 @@ make release
 ```
 
 Runner labels and installed Xcode versions are based on [GitHub's runner images](https://github.com/actions/runner-images). Certificate import follows [GitHub's macOS signing guidance](https://docs.github.com/en/actions/how-tos/deploy/deploy-to-third-party-platforms/sign-xcode-applications), with additional trust setup for a self-signed certificate.
+
+## In-app updates
+
+Actions generates and signs `appcast-arm64.xml` and `appcast-x86_64.xml`, then uploads them alongside the DMGs. Each app reads its architecture-specific feed through GitHub's `releases/latest/download/` endpoint. No GitHub Pages setup or separate server is needed. Do not mark an older release without feeds as Latest.
+
+Copy the generated update key from the repository root and paste it into `SPARKLE_PRIVATE_KEY`:
+
+```sh
+pbcopy < .signing/sparkle-private-key
+```
+
+The key is also stored in the login Keychain under account `com.maccask.app.sparkle`. The public key in `Resources/SparklePublicKey.txt` is embedded during packaging. Back up the private key and retain it across releases. Do not generate a new key for each version. Keep the two existing P12 secrets unchanged.
+
+The updater verifies signed feeds and DMGs before extraction. Automatic checks are off by default and can be enabled in Settings. Sparkle presents download, installation, and restart controls. Install the app in a writable location before updating; an app running from a read-only DMG cannot replace itself. Existing versions without the updater require one manual installation.
+
+Release builds use `VERSION` for both `CFBundleVersion` and `CFBundleShortVersionString`. Increase it for each update; CI run numbers and local timestamps are no longer used. The first manual installation migrates older builds to this version scheme. Reserve `BUILD` overrides for development validation.
+
+Local feed validation:
+
+```sh
+make release
+SPARKLE_PRIVATE_KEY="$(cat .signing/sparkle-private-key)" bash Scripts/Release/generate-appcast.sh build/releases "$(uname -m)" "v$(cat VERSION)"
+python3 Tests/Release/test-updater.py
+```
+
+Self-signing is not Apple notarization. Before release, validate download, quit, replacement, and relaunch using two distinct app versions in a test location. Do not publish artificial production versions for testing.
+
+Background update checks show an in-app notice without opening a window or downloading the update. Choose **View Update…** when ready to review and install it.
+
+### Local end-to-end update test
+
+With Sparkle resolved, `.signing/sparkle-private-key` available, and the local signing identity installed:
+
+```sh
+python3 Tests/Release/run-update-integration.py
+python3 Tests/Release/run-update-integration.py --scenario cancel
+```
+
+These tests briefly open an isolated test app's Sparkle window and drive controls within that process. They reuse the production updater and notice view, serve signed fixtures over loopback, and use a unique bundle identifier. The install scenario verifies download, replacement, and actual relaunch; cancel verifies no download or replacement. Nothing in Applications is replaced. Evidence remains in the printed build/update-integration-* directory. A macOS GUI session is required; these tests are not run in headless CI.

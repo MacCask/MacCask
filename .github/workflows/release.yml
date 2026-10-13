@@ -36,6 +36,7 @@ jobs:
         run: |
           bash Tests/Release/test-version.sh
           bash Tests/Release/test-signing-selection.sh
+          python3 Tests/Release/test-updater.py
           if [ -n "$RELEASE_TAG" ]; then
             version="$(bash Scripts/Utils/read-version.sh VERSION "$RELEASE_TAG")"
           else
@@ -46,9 +47,11 @@ jobs:
         env:
           BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
           P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: |
           : "${BUILD_CERTIFICATE_BASE64:?Configure BUILD_CERTIFICATE_BASE64}"
           : "${P12_PASSWORD:?Configure P12_PASSWORD}"
+          : "${SPARKLE_PRIVATE_KEY:?Configure SPARKLE_PRIVATE_KEY}"
 
   build:
     name: Build ${{ matrix.arch }}
@@ -92,13 +95,22 @@ jobs:
       - name: Build, sign, and archive
         env:
           SIGN_IDENTITY: ${{ steps.signing.outputs.identity }}
-          BUILD_NUMBER: ${{ github.run_number }}
+          BUILD_NUMBER: ${{ needs.prepare.outputs.version }}
         run: make release ARCH="$TARGET_ARCH" BUILD="$BUILD_NUMBER" SIGN_IDENTITY="$SIGN_IDENTITY"
+      - name: Generate signed update feed
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          bash Scripts/Release/generate-appcast.sh build/releases "$TARGET_ARCH" "$RELEASE_TAG"
+          python3 Tests/Release/test-appcast.py build/releases "$TARGET_ARCH"
       - name: Upload architecture archive
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: maccask-${{ matrix.arch }}
-          path: build/releases/MacCask-${{ needs.prepare.outputs.version }}-macos-${{ matrix.arch }}.dmg
+          path: |
+            build/releases/MacCask-${{ needs.prepare.outputs.version }}-macos-${{ matrix.arch }}.dmg
+            build/releases/appcast-${{ matrix.arch }}.xml
           if-no-files-found: error
           retention-days: 7
       - name: Remove signing material
@@ -139,6 +151,8 @@ jobs:
           arm="MacCask-$RELEASE_VERSION-macos-arm64.dmg"
           test -s "$intel"
           test -s "$arm"
+          test -s appcast-arm64.xml
+          test -s appcast-x86_64.xml
           sha256sum "$intel" "$arm" > SHA256SUMS
           sha256sum --check SHA256SUMS
           notes="$RUNNER_TEMP/maccask-release-notes.md"
@@ -161,7 +175,7 @@ jobs:
             gh release create "$RELEASE_TAG" --verify-tag --draft \
               --title "MacCask $RELEASE_VERSION" --notes-file "$notes"
           fi
-          gh release upload "$RELEASE_TAG" "$intel" "$arm" SHA256SUMS --clobber
+          gh release upload "$RELEASE_TAG" "$intel" "$arm" SHA256SUMS appcast-arm64.xml appcast-x86_64.xml --clobber
           # DMG 与校验和上传成功后，仅移除当前版本遗留的两份 ZIP 附件。
           legacy_intel="MacCask-$RELEASE_VERSION-macos-x86_64.zip"
           legacy_arm="MacCask-$RELEASE_VERSION-macos-arm64.zip"
