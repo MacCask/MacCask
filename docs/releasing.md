@@ -2,7 +2,7 @@
 
 [简体中文](releasing.zh-CN.md)
 
-Pushing a tag matching `VERSION` starts `.github/workflows/release.yml`. It tests and builds x86_64 on `macos-26-intel` and arm64 on `macos-26`, using Xcode 26.6. Both builds must succeed before a GitHub Release is published. The apps use your self-signed certificate and are not notarized.
+Pushing a tag matching `VERSION` starts `.github/workflows/release.yml`. Both architecture jobs use Apple Silicon `macos-26` runners with Xcode 26.6. SwiftPM cross-compiles the Intel executable with `--arch x86_64` and builds arm64 natively. The full test suite, including graphics rendering, runs in the native arm64 job; the Intel archive is independently compiled and its architecture and signature are verified. Both builds must succeed before a GitHub Release is published. The apps use your self-signed certificate and are not notarized.
 
 ## Configure repository secrets
 
@@ -58,7 +58,7 @@ make release ARCH=x86_64
 make release ARCH=arm64
 ```
 
-Archives are written to `build/releases/`; the app bundle remains at `build/MacCask.app`. The last build replaces that bundle, so choose your Mac's architecture for the last build if you want to run it locally. CI uses separate native runners and runs tests on each architecture.
+Archives are written to `build/releases/`; the app bundle remains at `build/MacCask.app`. The last build replaces that bundle, so choose your Mac's architecture for the last build if you want to run it locally. CI uses separate Apple Silicon runners for the two target architectures, with the full tests in the native arm64 job. Intel GitHub virtual machines cannot reliably run the graphics tests.
 
 ## Validation
 

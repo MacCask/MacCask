@@ -2,7 +2,7 @@
 
 [English](releasing.md)
 
-推送与 `VERSION` 一致的 tag 后，`.github/workflows/release.yml` 会使用 Xcode 26.6，在 `macos-26-intel` 上测试和构建 x86_64，在 `macos-26` 上测试和构建 arm64。两个架构都成功后才公开 GitHub Release。应用使用你的自签证书，不执行 Apple 公证。
+推送与 `VERSION` 一致的 tag 后，`.github/workflows/release.yml` 会使用 Xcode 26.6 和 Apple Silicon `macos-26` runner。SwiftPM 通过 `--arch x86_64` 交叉编译 Intel 程序，arm64 原生构建。含图形渲染的完整测试在原生 arm64 作业运行；Intel 压缩包独立编译，并校验架构和签名。两个架构都成功后才公开 GitHub Release。应用使用你的自签证书，不执行 Apple 公证。
 
 ## 配置仓库 Secrets
 
@@ -58,7 +58,7 @@ make release ARCH=x86_64
 make release ARCH=arm64
 ```
 
-压缩包写入 `build/releases/`，应用包仍位于 `build/MacCask.app`。最后一次构建会替换应用包，因此需要本地运行时，请最后构建本机架构。CI 为两个架构分别使用原生 runner 并运行测试。
+压缩包写入 `build/releases/`，应用包仍位于 `build/MacCask.app`。最后一次构建会替换应用包，因此需要本地运行时，请最后构建本机架构。CI 为两种目标架构分别使用 Apple Silicon runner，完整测试在原生 arm64 作业运行。Intel GitHub 虚拟机无法可靠运行图形测试。
 
 ## 验证
 
