@@ -96,10 +96,10 @@ To explicitly use ad-hoc signing:
 make app SIGN_IDENTITY=""
 ```
 
-You can set the bundle version and build number:
+The app version is read from [VERSION](VERSION), initially `1.0.0`. Edit that file to change the version. You can set the build number separately:
 
 ```sh
-make app VERSION=1.0.0 BUILD=1
+make app BUILD=1
 ```
 
 Packaging signs the app locally; it does not submit it for notarization. To verify the generated bundle:
@@ -130,6 +130,7 @@ swift test
 | `swift test` | Run automated tests |
 | `make build` | Build icons and the release executable |
 | `make app` | Create and sign `build/MacCask.app` |
+| `make release ARCH=arm64` | Build and archive the arm64 app under `build/releases/` (use `ARCH=x86_64` for Intel) |
 | `make run` | Package and launch the app |
 | `make install` | Package and install to `/Applications` |
 | `make clean` | Delete generated `build/` and `.build/` directories |
@@ -198,6 +199,8 @@ Bug reports, improvements, and translations are welcome through [issues](https:/
 For code changes, follow the [development guidelines](agents.md), run `swift test`, and verify `make app`. Check both English and Simplified Chinese for interface changes. Include a description of the change and how it was verified in your pull request.
 
 Architecture details are in the [design document](docs/design.md).
+
+Maintainers can configure [tag-based releases and signing secrets](docs/releasing.md). A matching version tag publishes separate Intel and Apple Silicon archives after both builds succeed.
 
 ## License
 
